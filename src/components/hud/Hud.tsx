@@ -53,29 +53,25 @@ export function Hud() {
     );
   }
 
-  const allUsed = game.dice.every((d) => d.used);
   const activeIndex = turnDone
     ? -1
     : game.dice.findIndex((d) => !d.used && d.value === currentDie);
   return (
     <View style={styles.hud}>
       <TurnBadge player={game.turn} />
-      <Pressable style={styles.dice} onPress={turnDone ? endTurn : swap} hitSlop={12}>
-        {game.dice.map((die, i) => (
-          <View
-            key={i}
-            style={[styles.die, i === activeIndex && styles.activeDie]}
-          >
-            <DieFace value={die.value} size={36} dimmed={die.used} />
-          </View>
-        ))}
-      </Pressable>
-      {turnDone && (
-        <Text style={styles.notice}>
-          {allUsed ? 'Tap dice to finish' : 'No moves — tap dice'}
-        </Text>
-      )}
-      {canUndo && <HudButton label="Undo" onPress={undo} />}
+      <View style={styles.diceColumn}>
+        <Pressable style={styles.dice} onPress={turnDone ? endTurn : swap} hitSlop={12}>
+          {game.dice.map((die, i) => (
+            <View
+              key={i}
+              style={[styles.die, i === activeIndex && styles.activeDie]}
+            >
+              <DieFace value={die.value} size={36} dimmed={die.used} />
+            </View>
+          ))}
+        </Pressable>
+        {canUndo && <HudButton label="Undo" onPress={undo} />}
+      </View>
     </View>
   );
 }
@@ -119,6 +115,10 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 2,
   },
+  diceColumn: {
+    alignItems: 'center',
+    gap: 10,
+  },
   dice: {
     flexDirection: 'row',
     gap: 6,
@@ -135,11 +135,6 @@ const styles = StyleSheet.create({
     color: '#e8e6e1',
     fontSize: 16,
     fontWeight: '600',
-  },
-  notice: {
-    color: boardTheme.selected,
-    fontSize: 16,
-    fontWeight: '700',
   },
   button: {
     backgroundColor: boardTheme.pointDark,
