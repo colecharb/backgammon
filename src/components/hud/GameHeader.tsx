@@ -2,6 +2,7 @@ import { useAtomValue, useSetAtom } from 'jotai';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { canUndoAtom, gameStateAtom, undoAtom, winnerAtom } from '../../state/game';
+import { boardTheme } from '../board/theme';
 import { HudButton } from './HudButton';
 
 /** Status text on the left, undo on the right, in a fixed-height row so the
@@ -20,13 +21,29 @@ export function GameHeader() {
         : `${capitalize(game.turn)} to roll`
       : `${capitalize(game.turn)} to play`;
 
+  const badgePlayer = victor ?? game.turn;
   return (
     <View style={styles.header}>
-      <Text style={styles.label}>{label}</Text>
+      <View style={styles.status}>
+        <TurnBadge player={badgePlayer} />
+        <Text style={styles.label}>{label}</Text>
+      </View>
       <View style={!canUndo && styles.hidden} pointerEvents={canUndo ? 'auto' : 'none'}>
         <HudButton label="Undo" onPress={undo} />
       </View>
     </View>
+  );
+}
+
+function TurnBadge({ player }: { player: 'white' | 'black' }) {
+  const colors = boardTheme.checker[player];
+  return (
+    <View
+      style={[
+        styles.badge,
+        { backgroundColor: colors.fill, borderColor: colors.stroke },
+      ]}
+    />
   );
 }
 
@@ -41,6 +58,17 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     height: 56,
     paddingHorizontal: 4,
+  },
+  status: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  badge: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
   },
   label: {
     color: '#e8e6e1',
