@@ -1,8 +1,7 @@
 import { useAtomValue, useSetAtom } from 'jotai';
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import {
-  canUndoAtom,
   currentDieAtom,
   endTurnAtom,
   gameStateAtom,
@@ -10,32 +9,26 @@ import {
   newGameAtom,
   rollAtom,
   swapDiceAtom,
-  undoAtom,
-  winnerAtom,
 } from '../../state/game';
 import { boardTheme } from '../board/theme';
 import { DieFace } from './DieFace';
+import { HudButton } from './HudButton';
 
+/** Controls below the board: roll, the dice (tap to swap order, tap to
+ * finish once nothing is playable), or new game. Fixed height so the
+ * centered board never shifts between phases. */
 export function Hud() {
   const game = useAtomValue(gameStateAtom);
   const legalMoves = useAtomValue(legalMovesAtom);
   const currentDie = useAtomValue(currentDieAtom);
-  const canUndo = useAtomValue(canUndoAtom);
-  const victor = useAtomValue(winnerAtom);
   const roll = useSetAtom(rollAtom);
   const swap = useSetAtom(swapDiceAtom);
   const endTurn = useSetAtom(endTurnAtom);
-  const undo = useSetAtom(undoAtom);
   const newGame = useSetAtom(newGameAtom);
 
-  // Once no legal move remains, tapping the dice hands the turn over;
-  // until then the same tap swaps their play order.
-  const turnDone = game.phase === 'moving' && legalMoves.length === 0;
-
-  if (game.phase === 'gameOver' && victor) {
+  if (game.phase === 'gameOver') {
     return (
       <View style={styles.hud}>
-        <Text style={styles.label}>{capitalize(victor)} wins!</Text>
         <HudButton label="New game" onPress={newGame} />
       </View>
     );
@@ -44,88 +37,35 @@ export function Hud() {
   if (game.phase === 'rolling') {
     return (
       <View style={styles.hud}>
-        <TurnBadge player={game.turn} />
-        <Text style={styles.label}>
-          {game.history.length === 0 ? 'Roll for the opening' : `${capitalize(game.turn)} to roll`}
-        </Text>
         <HudButton label="Roll" onPress={roll} />
       </View>
     );
   }
 
+  // Once no legal move remains, tapping the dice hands the turn over;
+  // until then the same tap swaps their play order.
+  const turnDone = legalMoves.length === 0;
   const activeIndex = turnDone
     ? -1
     : game.dice.findIndex((d) => !d.used && d.value === currentDie);
   return (
     <View style={styles.hud}>
-      <TurnBadge player={game.turn} />
-      <View style={styles.diceColumn}>
-        <Pressable style={styles.dice} onPress={turnDone ? endTurn : swap} hitSlop={12}>
-          {game.dice.map((die, i) => (
-            <View
-              key={i}
-              style={[styles.die, i === activeIndex && styles.activeDie]}
-            >
-              <DieFace value={die.value} size={36} dimmed={die.used} />
-            </View>
-          ))}
-        </Pressable>
-        {/* Always occupy the row so the centered layout doesn't jump. */}
-        <View style={!canUndo && styles.hidden} pointerEvents={canUndo ? 'auto' : 'none'}>
-          <HudButton label="Undo" onPress={undo} />
-        </View>
-      </View>
+      <Pressable style={styles.dice} onPress={turnDone ? endTurn : swap} hitSlop={12}>
+        {game.dice.map((die, i) => (
+          <View key={i} style={[styles.die, i === activeIndex && styles.activeDie]}>
+            <DieFace value={die.value} size={36} dimmed={die.used} />
+          </View>
+        ))}
+      </Pressable>
     </View>
   );
 }
 
-function TurnBadge({ player }: { player: 'white' | 'black' }) {
-  const colors = boardTheme.checker[player];
-  return (
-    <View
-      style={[
-        styles.badge,
-        { backgroundColor: colors.fill, borderColor: colors.stroke },
-      ]}
-    />
-  );
-}
-
-function HudButton({ label, onPress }: { label: string; onPress: () => void }) {
-  return (
-    <Pressable style={styles.button} onPress={onPress}>
-      <Text style={styles.buttonLabel}>{label}</Text>
-    </Pressable>
-  );
-}
-
-function capitalize(s: string): string {
-  return s[0].toUpperCase() + s.slice(1);
-}
-
 const styles = StyleSheet.create({
   hud: {
-    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12,
-    paddingVertical: 16,
-    // Fixed height so the board never shifts as HUD contents change
-    // between phases (roll button vs dice, undo appearing, winner).
-    height: 128,
-  },
-  badge: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2,
-  },
-  diceColumn: {
-    alignItems: 'center',
-    gap: 10,
-  },
-  hidden: {
-    opacity: 0,
+    height: 88,
   },
   dice: {
     flexDirection: 'row',
@@ -138,21 +78,5 @@ const styles = StyleSheet.create({
   },
   activeDie: {
     borderColor: boardTheme.selected,
-  },
-  label: {
-    color: '#e8e6e1',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  button: {
-    backgroundColor: boardTheme.pointDark,
-    paddingHorizontal: 18,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  buttonLabel: {
-    color: '#f1eadb',
-    fontSize: 16,
-    fontWeight: '700',
   },
 });

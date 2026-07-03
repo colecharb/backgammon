@@ -2,11 +2,13 @@ import React from 'react';
 import { SafeAreaView, StyleSheet, View } from 'react-native';
 import { Board } from '../components/board/Board';
 import { boardTheme } from '../components/board/theme';
+import { GameHeader } from '../components/hud/GameHeader';
 import { Hud } from '../components/hud/Hud';
 
 export function GameScreen() {
   return (
     <SafeAreaView style={styles.screen}>
+      <GameHeader />
       <View style={styles.frame}>
         <Board />
       </View>
