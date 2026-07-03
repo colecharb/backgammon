@@ -82,9 +82,11 @@ function columnForPoint(p: PointIndex): number {
 }
 
 /**
- * Center of the checker at `stackIndex` (0 = closest to the board edge) in a
- * stack of `stackCount`. Stacks grow toward the middle of the board and
- * compress their spacing once they would overflow their column.
+ * Center of the checker at `stackIndex` (0 = closest to the anchor edge) in
+ * a stack of `stackCount`, compressing spacing once it would overflow the
+ * column. Point and off stacks anchor at the board edge and grow toward the
+ * middle; bar stacks anchor at the board's center line and grow outward so
+ * hit checkers sit visibly mid-board.
  */
 export function checkerCenter(
   layout: BoardLayout,
@@ -98,8 +100,9 @@ export function checkerCenter(
   const usable = rect.height - 2 * r;
   const spacing =
     stackCount > 1 ? Math.min(2 * r, usable / (stackCount - 1)) : 0;
-  const grow = isTop ? 1 : -1;
-  const base = isTop ? rect.y + r : rect.y + rect.height - r;
+  const anchorTop = location === 'bar' ? !isTop : isTop;
+  const grow = anchorTop ? 1 : -1;
+  const base = anchorTop ? rect.y + r : rect.y + rect.height - r;
   return {
     x: rect.x + rect.width / 2,
     y: base + grow * spacing * stackIndex,
