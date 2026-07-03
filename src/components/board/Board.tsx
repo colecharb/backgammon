@@ -2,9 +2,8 @@ import { useAtomValue } from 'jotai';
 import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Svg, { Polygon, Rect as SvgRect } from 'react-native-svg';
-import { isPointIndex } from '../../engine/helpers';
 import { CheckerLocation, Player } from '../../engine/types';
-import { gameStateAtom, legalDestinationsAtom, selectedAtom } from '../../state/game';
+import { gameStateAtom, tappableSourcesAtom } from '../../state/game';
 import { Checker } from './Checker';
 import { BoardLayout, checkerCenter, computeLayout } from './geometry';
 import { LocationPressable } from './LocationPressable';
@@ -29,8 +28,7 @@ export function Board() {
 
 function BoardInner({ layout }: { layout: BoardLayout }) {
   const game = useAtomValue(gameStateAtom);
-  const selection = useAtomValue(selectedAtom);
-  const destinations = useAtomValue(legalDestinationsAtom);
+  const tappable = useAtomValue(tappableSourcesAtom);
 
   interface RenderedChecker {
     key: string;
@@ -65,8 +63,8 @@ function BoardInner({ layout }: { layout: BoardLayout }) {
       {checkers.map(({ key, location, player, stackIndex, stackCount }) => {
         const { x, y } = checkerCenter(layout, location, player, stackIndex, stackCount);
         const selected =
-          selection?.location === location &&
-          selection.player === player &&
+          player === game.turn &&
+          tappable.has(location) &&
           stackIndex === stackCount - 1;
         return (
           <Checker
@@ -76,29 +74,6 @@ function BoardInner({ layout }: { layout: BoardLayout }) {
             radius={layout.checkerRadius}
             player={player}
             selected={selected}
-          />
-        );
-      })}
-      {destinations.map((location) => {
-        const count = isPointIndex(location)
-          ? game.board.points[location - 1]?.count ?? 0
-          : game.board.off[game.turn];
-        const { x, y } = checkerCenter(layout, location, game.turn, count, count + 1);
-        const r = layout.checkerRadius;
-        return (
-          <View
-            key={`dest-${location}`}
-            pointerEvents="none"
-            style={[
-              styles.destinationMarker,
-              {
-                left: x - r,
-                top: y - r,
-                width: r * 2,
-                height: r * 2,
-                borderRadius: r,
-              },
-            ]}
           />
         );
       })}
@@ -143,11 +118,5 @@ function BoardBackground({ layout }: { layout: BoardLayout }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  destinationMarker: {
-    position: 'absolute',
-    borderWidth: 2.5,
-    borderColor: boardTheme.selected,
-    opacity: 0.75,
   },
 });

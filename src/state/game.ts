@@ -1,5 +1,5 @@
 import { atom } from 'jotai';
-import { isOpeningRoll, rollOpening, rollTurn } from '../engine/dice';
+import { isOpeningRoll, rollOpening, rollTurn, swapDice } from '../engine/dice';
 import { getPoint, isPointIndex } from '../engine/helpers';
 import { applyMove, endTurn, undoLastMove, winner } from '../engine/moves';
 import { getLegalMoves } from '../engine/rules';
@@ -8,29 +8,29 @@ import { CheckerLocation, GameState, Player } from '../engine/types';
 
 export const gameStateAtom = atom<GameState>(initialGameState());
 
-/** UI-only: the checker stack the user has picked up, if any. */
-export interface CheckerSelection {
-  location: CheckerLocation;
-  player: Player;
-}
-
-export const selectedAtom = atom<CheckerSelection | null>(null);
-
 export const legalMovesAtom = atom((get) => getLegalMoves(get(gameStateAtom)));
 
-/** Locations the current player may move a checker from right now. */
-export const movableSourcesAtom = atom(
-  (get) => new Set<CheckerLocation>(get(legalMovesAtom).map((m) => m.from)),
-);
+/**
+ * The die a tap will play next: the first unused one in display order —
+ * unless forced play leaves it with no legal moves, in which case the
+ * active die skips ahead to one that has some (so the game never looks
+ * stuck behind an unplayable die).
+ */
+export const currentDieAtom = atom((get) => {
+  const unused = get(gameStateAtom).dice.filter((d) => !d.used);
+  const legal = get(legalMovesAtom);
+  const playable = unused.find((d) => legal.some((m) => m.die === d.value));
+  return (playable ?? unused[0])?.value ?? null;
+});
 
-/** Where the selected checker may legally land. */
-export const legalDestinationsAtom = atom((get) => {
-  const selected = get(selectedAtom);
-  if (!selected) return [] as CheckerLocation[];
-  const destinations = get(legalMovesAtom)
-    .filter((m) => m.from === selected.location)
-    .map((m) => m.to as CheckerLocation);
-  return [...new Set(destinations)];
+/** Stacks that can legally move with the current die — tap one to play it. */
+export const tappableSourcesAtom = atom((get) => {
+  const die = get(currentDieAtom);
+  return new Set<CheckerLocation>(
+    get(legalMovesAtom)
+      .filter((m) => m.die === die)
+      .map((m) => m.from),
+  );
 });
 
 /** True once the player has consumed at least one die this turn. */
@@ -49,20 +49,22 @@ export const rollAtom = atom(null, (get, set) => {
   );
 });
 
+/** Tap the dice to flip which one plays first. */
+export const swapDiceAtom = atom(null, (get, set) => {
+  set(gameStateAtom, swapDice(get(gameStateAtom)));
+});
+
 export const endTurnAtom = atom(null, (get, set) => {
   set(gameStateAtom, endTurn(get(gameStateAtom)));
-  set(selectedAtom, null);
 });
 
 export const undoAtom = atom(null, (get, set) => {
   if (!get(canUndoAtom)) return;
   set(gameStateAtom, undoLastMove(get(gameStateAtom)));
-  set(selectedAtom, null);
 });
 
 export const newGameAtom = atom(null, (_get, set) => {
   set(gameStateAtom, initialGameState());
-  set(selectedAtom, null);
 });
 
 export interface TapPayload {
@@ -76,41 +78,19 @@ export interface TapPayload {
 }
 
 /**
- * The whole tap-tap interaction: first tap selects a stack that has legal
- * moves, second tap plays the matching legal move (or re-selects another
- * movable stack, or deselects when re-tapping the same one).
+ * One-tap movement: tapping a stack plays its move with the current die,
+ * provided that exact move is legal under the forced-play rules. Swap the
+ * dice to play the other die first.
  */
 export const tapLocationAtom = atom(null, (get, set, tap: TapPayload) => {
   const game = get(gameStateAtom);
   if (game.phase !== 'moving') return;
-  const selected = get(selectedAtom);
-  const legal = get(legalMovesAtom);
-
-  if (selected) {
-    const sameSpot =
-      selected.location === tap.location &&
-      (tap.player === undefined || tap.player === selected.player);
-    if (sameSpot) {
-      set(selectedAtom, null);
-      return;
-    }
-    const candidates = legal.filter(
-      (m) => m.from === selected.location && m.to === tap.location,
-    );
-    if (candidates.length > 0) {
-      // Several dice can reach the same spot only when bearing off with an
-      // overshoot available; spend the smallest die that works.
-      const move = candidates.reduce((a, b) => (a.die <= b.die ? a : b));
-      set(gameStateAtom, applyMove(game, move));
-      set(selectedAtom, null);
-      return;
-    }
-    // Not a destination — treat as switching selection if possible.
-  }
-
-  if (legal.some((m) => m.from === tap.location) && ownsStack(game, tap)) {
-    set(selectedAtom, { location: tap.location, player: game.turn });
-  }
+  if (!ownsStack(game, tap)) return;
+  const die = get(currentDieAtom);
+  const move = get(legalMovesAtom).find(
+    (m) => m.from === tap.location && m.die === die,
+  );
+  if (move) set(gameStateAtom, applyMove(game, move));
 });
 
 function ownsStack(game: GameState, tap: TapPayload): boolean {

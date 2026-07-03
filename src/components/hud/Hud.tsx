@@ -3,11 +3,13 @@ import React, { useEffect } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import {
   canUndoAtom,
+  currentDieAtom,
   endTurnAtom,
   gameStateAtom,
   legalMovesAtom,
   newGameAtom,
   rollAtom,
+  swapDiceAtom,
   undoAtom,
   winnerAtom,
 } from '../../state/game';
@@ -19,9 +21,11 @@ const NO_MOVES_DISPLAY_MS = 1200;
 export function Hud() {
   const game = useAtomValue(gameStateAtom);
   const legalMoves = useAtomValue(legalMovesAtom);
+  const currentDie = useAtomValue(currentDieAtom);
   const canUndo = useAtomValue(canUndoAtom);
   const victor = useAtomValue(winnerAtom);
   const roll = useSetAtom(rollAtom);
+  const swap = useSetAtom(swapDiceAtom);
   const endTurn = useSetAtom(endTurnAtom);
   const undo = useSetAtom(undoAtom);
   const newGame = useSetAtom(newGameAtom);
@@ -58,14 +62,20 @@ export function Hud() {
   }
 
   const allUsed = game.dice.every((d) => d.used);
+  const activeIndex = game.dice.findIndex((d) => !d.used && d.value === currentDie);
   return (
     <View style={styles.hud}>
       <TurnBadge player={game.turn} />
-      <View style={styles.dice}>
+      <Pressable style={styles.dice} onPress={swap} hitSlop={12}>
         {game.dice.map((die, i) => (
-          <DieFace key={i} value={die.value} size={36} dimmed={die.used} />
+          <View
+            key={i}
+            style={[styles.die, i === activeIndex && styles.activeDie]}
+          >
+            <DieFace value={die.value} size={36} dimmed={die.used} />
+          </View>
         ))}
-      </View>
+      </Pressable>
       {stuck && !allUsed && <Text style={styles.notice}>No moves</Text>}
       {canUndo && <HudButton label="Undo" onPress={undo} />}
     </View>
@@ -114,6 +124,14 @@ const styles = StyleSheet.create({
   dice: {
     flexDirection: 'row',
     gap: 6,
+  },
+  die: {
+    borderRadius: 9,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  activeDie: {
+    borderColor: boardTheme.selected,
   },
   label: {
     color: '#e8e6e1',

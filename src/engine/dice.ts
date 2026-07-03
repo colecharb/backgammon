@@ -38,6 +38,15 @@ export function rollTurn(state: GameState, rng: Rng): GameState {
   };
 }
 
+/**
+ * Reverse the play order of the dice. Only meaningful while both remain
+ * unused (and never for doubles); otherwise returns the state unchanged.
+ */
+export function swapDice(state: GameState): GameState {
+  if (state.dice.some((d) => d.used)) return state;
+  return { ...state, dice: [...state.dice].reverse() };
+}
+
 /** True until the first roll of the game has happened. */
 export function isOpeningRoll(state: GameState): boolean {
   return state.history.length === 0 && state.dice.length === 0;

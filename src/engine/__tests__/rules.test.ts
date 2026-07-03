@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { diceFromValues, rollOpening, rollTurn } from '../dice';
+import { diceFromValues, rollOpening, rollTurn, swapDice } from '../dice';
 import { applyMove, undoLastMove } from '../moves';
 import { canBearOff, getLegalMoves, movesForDie } from '../rules';
 import { initialGameState } from '../setup';
@@ -180,6 +180,14 @@ describe('dice', () => {
     state = rollOpening(initialGameState(), rngFrom([0.5, 0.5, 0.0, 0.99]));
     expect(state.turn).toBe('black');
     expect(state.dice.map((d) => d.value)).toEqual([1, 6]);
+  });
+
+  it('swaps play order only while no die is used', () => {
+    const state = { ...initialGameState(), phase: 'moving' as const, dice: diceFromValues(6, 2) };
+    expect(swapDice(state).dice.map((d) => d.value)).toEqual([2, 6]);
+
+    const oneUsed = { ...state, dice: [{ value: 6, used: true }, { value: 2, used: false }] };
+    expect(swapDice(oneUsed)).toBe(oneUsed);
   });
 
   it('a rolled double yields four dice', () => {
