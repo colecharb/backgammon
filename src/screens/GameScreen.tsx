@@ -2,6 +2,7 @@ import React from 'react';
 import { SafeAreaView, StyleSheet, View } from 'react-native';
 import { Board } from '../components/board/Board';
 import { boardTheme } from '../components/board/theme';
+import { Hud } from '../components/hud/Hud';
 
 export function GameScreen() {
   return (
@@ -9,6 +10,7 @@ export function GameScreen() {
       <View style={styles.frame}>
         <Board />
       </View>
+      <Hud />
     </SafeAreaView>
   );
 }
