@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Svg, { Polygon, Rect as SvgRect } from 'react-native-svg';
 import { CheckerLocation, Player } from '../../engine/types';
-import { gameStateAtom, tappableSourcesAtom } from '../../state/game';
+import { gameStateAtom } from '../../state/game';
 import { Checker } from './Checker';
 import { BoardLayout, checkerCenter, computeLayout } from './geometry';
 import { LocationPressable } from './LocationPressable';
@@ -28,7 +28,6 @@ export function Board() {
 
 function BoardInner({ layout }: { layout: BoardLayout }) {
   const game = useAtomValue(gameStateAtom);
-  const tappable = useAtomValue(tappableSourcesAtom);
 
   interface RenderedChecker {
     key: string;
@@ -62,10 +61,6 @@ function BoardInner({ layout }: { layout: BoardLayout }) {
       <BoardBackground layout={layout} />
       {checkers.map(({ key, location, player, stackIndex, stackCount }) => {
         const { x, y } = checkerCenter(layout, location, player, stackIndex, stackCount);
-        const selected =
-          player === game.turn &&
-          tappable.has(location) &&
-          stackIndex === stackCount - 1;
         return (
           <Checker
             key={key}
@@ -73,7 +68,7 @@ function BoardInner({ layout }: { layout: BoardLayout }) {
             cy={y}
             radius={layout.checkerRadius}
             player={player}
-            selected={selected}
+            selected={false}
           />
         );
       })}

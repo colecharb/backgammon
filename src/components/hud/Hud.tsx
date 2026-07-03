@@ -1,5 +1,5 @@
 import { useAtomValue, useSetAtom } from 'jotai';
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import {
   canUndoAtom,
@@ -16,8 +16,6 @@ import {
 import { boardTheme } from '../board/theme';
 import { DieFace } from './DieFace';
 
-const NO_MOVES_DISPLAY_MS = 1200;
-
 export function Hud() {
   const game = useAtomValue(gameStateAtom);
   const legalMoves = useAtomValue(legalMovesAtom);
@@ -30,15 +28,9 @@ export function Hud() {
   const undo = useSetAtom(undoAtom);
   const newGame = useSetAtom(newGameAtom);
 
-  const stuck = game.phase === 'moving' && legalMoves.length === 0;
-
-  // The turn ends itself once no legal move remains — after a beat, so the
-  // player sees their dice (and the "no moves" notice) before it passes.
-  useEffect(() => {
-    if (!stuck) return;
-    const timer = setTimeout(endTurn, NO_MOVES_DISPLAY_MS);
-    return () => clearTimeout(timer);
-  }, [stuck, endTurn]);
+  // Once no legal move remains, tapping the dice hands the turn over;
+  // until then the same tap swaps their play order.
+  const turnDone = game.phase === 'moving' && legalMoves.length === 0;
 
   if (game.phase === 'gameOver' && victor) {
     return (
@@ -62,11 +54,13 @@ export function Hud() {
   }
 
   const allUsed = game.dice.every((d) => d.used);
-  const activeIndex = game.dice.findIndex((d) => !d.used && d.value === currentDie);
+  const activeIndex = turnDone
+    ? -1
+    : game.dice.findIndex((d) => !d.used && d.value === currentDie);
   return (
     <View style={styles.hud}>
       <TurnBadge player={game.turn} />
-      <Pressable style={styles.dice} onPress={swap} hitSlop={12}>
+      <Pressable style={styles.dice} onPress={turnDone ? endTurn : swap} hitSlop={12}>
         {game.dice.map((die, i) => (
           <View
             key={i}
@@ -76,7 +70,11 @@ export function Hud() {
           </View>
         ))}
       </Pressable>
-      {stuck && !allUsed && <Text style={styles.notice}>No moves</Text>}
+      {turnDone && (
+        <Text style={styles.notice}>
+          {allUsed ? 'Tap dice to finish' : 'No moves — tap dice'}
+        </Text>
+      )}
       {canUndo && <HudButton label="Undo" onPress={undo} />}
     </View>
   );
