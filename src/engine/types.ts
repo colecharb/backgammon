@@ -19,6 +19,10 @@ export interface Move {
   player: Player;
   from: CheckerLocation;
   to: CheckerLocation;
+  /** Which die this move consumes; absent for free (rules-off) movement. */
+  die?: number;
+  /** Whether this move sent an opposing blot to the bar (set on applied moves). */
+  hit?: boolean;
 }
 
 export interface Die {
@@ -32,9 +36,12 @@ export interface DoublingCube {
   owner: Player | null;
 }
 
+export type GamePhase = 'rolling' | 'moving' | 'gameOver';
+
 export interface GameState {
   board: BoardState;
   turn: Player;
+  phase: GamePhase;
   /** Empty until rolled; four entries on doubles. */
   dice: Die[];
   /** Append-only log of applied moves — the undo/replay/sync primitive. */

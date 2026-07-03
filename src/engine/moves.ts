@@ -1,11 +1,11 @@
-import { getPoint, isPointIndex, opponent } from './helpers';
-import { BoardState, GameState, Move, Player, PointIndex } from './types';
+import { CHECKERS_PER_PLAYER, getPoint, isPointIndex, opponent } from './helpers';
+import { BoardState, Die, GameState, Move, Player, PointIndex } from './types';
 
 /**
  * Whether a checker of `player` may land on `to`.
  * Points blocked by two or more opposing checkers are closed; everything
  * else (own point, empty point, opposing blot, bar, off) is open.
- * Dice legality is a separate concern and does not live here.
+ * Dice legality is a separate concern (see rules.ts) and does not live here.
  */
 export function canPlace(board: BoardState, player: Player, to: Move['to']): boolean {
   if (!isPointIndex(to)) return true;
@@ -14,19 +14,82 @@ export function canPlace(board: BoardState, player: Player, to: Move['to']): boo
 }
 
 /**
- * Apply a move with no dice/turn legality checks (milestone 1: free movement).
- * Handles every location kind, hits opposing blots, and appends to history.
- * Throws if the source has no checker of the moving player or the destination
- * is a closed point — callers gate taps with canPlace.
- * Rules arrive later as getLegalMoves(state); this stays the single mutation point.
+ * Move one checker on the board with no dice/turn legality checks.
+ * Handles every location kind and hits opposing blots to the bar.
+ * Throws if the source has no checker of the moving player or the
+ * destination is a closed point.
+ */
+export function applyMoveToBoard(
+  board: BoardState,
+  player: Player,
+  from: Move['from'],
+  to: Move['to'],
+): { board: BoardState; hit: boolean } {
+  if (!canPlace(board, player, to)) {
+    throw new Error(`Point ${to} is closed to ${player}`);
+  }
+  const lifted = removeChecker(board, player, from);
+  return addChecker(lifted, player, to);
+}
+
+/**
+ * Apply a move to the game: updates the board, marks the consumed die used
+ * (when `move.die` is set), appends to history, and flips to gameOver when
+ * the mover's last checker bears off.
+ * This stays the single mutation point as rules arrive around it.
  */
 export function applyMove(state: GameState, move: Move): GameState {
-  if (!canPlace(state.board, move.player, move.to)) {
-    throw new Error(`Point ${move.to} is closed to ${move.player}`);
+  const { board, hit } = applyMoveToBoard(state.board, move.player, move.from, move.to);
+  const dice = move.die === undefined ? state.dice : consumeDie(state.dice, move.die);
+  const gameOver = board.off[move.player] === CHECKERS_PER_PLAYER;
+  return {
+    ...state,
+    board,
+    dice,
+    phase: gameOver ? 'gameOver' : state.phase,
+    history: [...state.history, { ...move, hit }],
+  };
+}
+
+/** Reverse the last applied move, restoring any hit blot and freeing its die. */
+export function undoLastMove(state: GameState): GameState {
+  const move = state.history[state.history.length - 1];
+  if (!move) throw new Error('No move to undo');
+  let { board } = applyMoveToBoard(state.board, move.player, move.to, move.from);
+  if (move.hit && isPointIndex(move.to)) {
+    ({ board } = applyMoveToBoard(board, opponent(move.player), 'bar', move.to));
   }
-  let board = removeChecker(state.board, move.player, move.from);
-  board = addChecker(board, move.player, move.to);
-  return { ...state, board, history: [...state.history, move] };
+  return {
+    ...state,
+    board,
+    dice: move.die === undefined ? state.dice : restoreDie(state.dice, move.die),
+    phase: state.phase === 'gameOver' ? 'moving' : state.phase,
+    history: state.history.slice(0, -1),
+  };
+}
+
+/** Hand the turn to the opponent, ready to roll. */
+export function endTurn(state: GameState): GameState {
+  return { ...state, turn: opponent(state.turn), phase: 'rolling', dice: [] };
+}
+
+export function winner(state: GameState): Player | null {
+  for (const player of ['white', 'black'] as const) {
+    if (state.board.off[player] === CHECKERS_PER_PLAYER) return player;
+  }
+  return null;
+}
+
+function consumeDie(dice: Die[], value: number): Die[] {
+  const index = dice.findIndex((d) => !d.used && d.value === value);
+  if (index === -1) throw new Error(`No unused die of value ${value}`);
+  return dice.map((d, i) => (i === index ? { ...d, used: true } : d));
+}
+
+function restoreDie(dice: Die[], value: number): Die[] {
+  const index = dice.findIndex((d) => d.used && d.value === value);
+  if (index === -1) throw new Error(`No used die of value ${value}`);
+  return dice.map((d, i) => (i === index ? { ...d, used: false } : d));
 }
 
 function removeChecker(
@@ -50,21 +113,34 @@ function removeChecker(
   );
 }
 
-function addChecker(board: BoardState, player: Player, to: Move['to']): BoardState {
+function addChecker(
+  board: BoardState,
+  player: Player,
+  to: Move['to'],
+): { board: BoardState; hit: boolean } {
   if (to === 'bar' || to === 'off') {
-    return { ...board, [to]: { ...board[to], [player]: board[to][player] + 1 } };
+    return {
+      board: { ...board, [to]: { ...board[to], [player]: board[to][player] + 1 } },
+      hit: false,
+    };
   }
   const point = getPoint(board, to);
   if (point === null) {
-    return setPoint(board, to, { player, count: 1 });
+    return { board: setPoint(board, to, { player, count: 1 }), hit: false };
   }
   if (point.player === player) {
-    return setPoint(board, to, { player, count: point.count + 1 });
+    return {
+      board: setPoint(board, to, { player, count: point.count + 1 }),
+      hit: false,
+    };
   }
   // Opposing blot: hit it to the bar.
   const enemy = opponent(player);
-  const hit = setPoint(board, to, { player, count: 1 });
-  return { ...hit, bar: { ...hit.bar, [enemy]: hit.bar[enemy] + 1 } };
+  const afterHit = setPoint(board, to, { player, count: 1 });
+  return {
+    board: { ...afterHit, bar: { ...afterHit.bar, [enemy]: afterHit.bar[enemy] + 1 } },
+    hit: true,
+  };
 }
 
 function setPoint(

@@ -34,6 +34,7 @@ export function initialGameState(): GameState {
   return {
     board: initialBoard(),
     turn: 'white',
+    phase: 'rolling',
     dice: [],
     history: [],
     cube: { value: 1, owner: null },
