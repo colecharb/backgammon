@@ -70,7 +70,10 @@ export function Hud() {
             </View>
           ))}
         </Pressable>
-        {canUndo && <HudButton label="Undo" onPress={undo} />}
+        {/* Always occupy the row so the centered layout doesn't jump. */}
+        <View style={!canUndo && styles.hidden} pointerEvents={canUndo ? 'auto' : 'none'}>
+          <HudButton label="Undo" onPress={undo} />
+        </View>
       </View>
     </View>
   );
@@ -107,7 +110,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 12,
     paddingVertical: 16,
-    minHeight: 72,
+    // Fixed height so the board never shifts as HUD contents change
+    // between phases (roll button vs dice, undo appearing, winner).
+    height: 128,
   },
   badge: {
     width: 24,
@@ -118,6 +123,9 @@ const styles = StyleSheet.create({
   diceColumn: {
     alignItems: 'center',
     gap: 10,
+  },
+  hidden: {
+    opacity: 0,
   },
   dice: {
     flexDirection: 'row',
