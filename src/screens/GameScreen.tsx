@@ -3,7 +3,6 @@ import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Board } from "../components/board/Board";
-import { boardTheme } from "../components/board/theme";
 import { GameHeader } from "../components/hud/GameHeader";
 import { Hud } from "../components/hud/Hud";
 import { newGameAtom } from "../state/game";
@@ -30,15 +29,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#1b1b1f",
     justifyContent: "center",
-    padding: 12,
   },
   frame: {
     aspectRatio: 14 / 11,
     maxHeight: "100%",
-    borderWidth: 8,
-    borderColor: boardTheme.frame,
-    borderRadius: 8,
-    overflow: "hidden",
   },
   reset: {
     alignSelf: "center",
