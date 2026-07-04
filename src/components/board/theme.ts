@@ -6,8 +6,8 @@ export const boardTheme = {
   bar: "#573f30",
   offTray: "#84604a",
   checker: {
-    white: { fill: "#f4efe3", stroke: "#000" },
-    black: { fill: "#404040", stroke: "#000" },
+    white: { fill: "#f4efe3", stroke: "#000", ring: "rgba(0, 0, 0, 0.18)" },
+    black: { fill: "#404040", stroke: "#000", ring: "rgba(0, 0, 0, 0.35)" },
   },
   selected: "#f5c542",
 } as const;
