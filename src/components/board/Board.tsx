@@ -97,6 +97,13 @@ function BoardBackground({ layout }: { layout: BoardLayout }) {
       <SvgRect x={0} y={height - frameThickness} width={width} height={frameThickness} fill={boardTheme.frame} />
       <SvgRect x={0} y={0} width={frameThickness} height={height} fill={boardTheme.frame} />
       <SvgRect x={width - frameThickness} y={0} width={frameThickness} height={height} fill={boardTheme.frame} />
+      <SvgRect
+        x={offColumn.x - frameThickness}
+        y={0}
+        width={frameThickness}
+        height={height}
+        fill={boardTheme.frame}
+      />
       {layout.points.map((rect, i) => {
         const isTop = layout.pointIsTop[i];
         const baseY = isTop ? rect.y : rect.y + rect.height;

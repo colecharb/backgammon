@@ -40,8 +40,9 @@ export interface BoardLayout {
 const COLUMNS = 14; // 12 points + bar + off tray
 
 export function computeLayout(width: number, height: number): BoardLayout {
-  // 14 columns plus a quarter-width frame strip on each side = 14.5 point widths.
-  const pointWidth = width / (COLUMNS + 0.5);
+  // 14 columns plus quarter-width frame strips on each side and one more
+  // between the felt and the off tray = 14.75 point widths.
+  const pointWidth = width / (COLUMNS + 0.75);
   const frameThickness = pointWidth / 4;
   const innerX = frameThickness;
   const innerY = frameThickness;
@@ -63,7 +64,8 @@ export function computeLayout(width: number, height: number): BoardLayout {
   }
 
   const barX = innerX + 6 * pointWidth;
-  const offX = innerX + 13 * pointWidth;
+  // The off tray sits past its own divider strip.
+  const offX = innerX + 13 * pointWidth + frameThickness;
   const topHalf = (x: number): Rect => ({ x, y: innerY, width: pointWidth, height: halfHeight });
   const bottomHalf = (x: number): Rect => ({ x, y: innerY + halfHeight, width: pointWidth, height: halfHeight });
 
