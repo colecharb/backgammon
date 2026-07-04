@@ -11,15 +11,19 @@ export function GameScreen() {
   const reset = useSetAtom(newGameAtom);
   return (
     <SafeAreaView style={styles.screen}>
-      <GameHeader />
+      <View style={styles.side}>
+        <GameHeader />
+      </View>
       <View style={styles.frame}>
         <Board />
       </View>
-      <Hud />
-      {/* Debug helper: wipe back to the starting position from any state. */}
-      <Pressable style={styles.reset} onPress={reset} hitSlop={8}>
-        <Text style={styles.resetLabel}>Reset game</Text>
-      </Pressable>
+      <View style={styles.side}>
+        <Hud />
+        {/* Debug helper: wipe back to the starting position from any state. */}
+        <Pressable style={styles.reset} onPress={reset} hitSlop={8}>
+          <Text style={styles.resetLabel}>Reset game</Text>
+        </Pressable>
+      </View>
     </SafeAreaView>
   );
 }
@@ -27,15 +31,23 @@ export function GameScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
+    flexDirection: "row",
     backgroundColor: "#1b1b1f",
+    alignItems: "center",
     justifyContent: "center",
   },
   frame: {
     aspectRatio: 14.75 / 10.5,
-    maxHeight: "100%",
+    height: "100%",
+    flexShrink: 1,
+  },
+  side: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
   },
   reset: {
-    alignSelf: "center",
     paddingVertical: 6,
     paddingHorizontal: 12,
   },

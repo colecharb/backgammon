@@ -10,8 +10,8 @@ import {
 import { boardTheme } from "../board/theme";
 import { HudButton } from "./HudButton";
 
-/** Status text on the left, undo on the right, in a fixed-height row so the
- * board below never shifts. */
+/** Status badge/text with undo beneath, stacked for the left side panel.
+ * The undo button keeps its space when hidden so nothing shifts. */
 export function GameHeader() {
   const game = useAtomValue(gameStateAtom);
   const canUndo = useAtomValue(canUndoAtom);
@@ -61,17 +61,13 @@ function capitalize(s: string): string {
 
 const styles = StyleSheet.create({
   header: {
-    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    height: 56,
-    paddingHorizontal: 4,
+    gap: 16,
   },
   status: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    paddingLeft: 7,
   },
   badge: {
     width: 20,
