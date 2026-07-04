@@ -24,8 +24,8 @@ export interface BoardLayout {
   width: number;
   height: number;
   pointWidth: number;
-  /** Top and bottom frame strips, half the bar's width. */
-  frameHeight: number;
+  /** Frame strips on all four sides, half the bar's width. */
+  frameThickness: number;
   checkerRadius: number;
   /** Full half-height column per point — also the tap target. */
   points: Rect[];
@@ -40,10 +40,12 @@ export interface BoardLayout {
 const COLUMNS = 14; // 12 points + bar + off tray
 
 export function computeLayout(width: number, height: number): BoardLayout {
-  const pointWidth = width / COLUMNS;
-  const frameHeight = pointWidth / 2;
-  const innerY = frameHeight;
-  const innerHeight = height - 2 * frameHeight;
+  // 14 columns plus a half-width frame strip on each side = 15 point widths.
+  const pointWidth = width / (COLUMNS + 1);
+  const frameThickness = pointWidth / 2;
+  const innerX = frameThickness;
+  const innerY = frameThickness;
+  const innerHeight = height - 2 * frameThickness;
   const halfHeight = innerHeight / 2;
   const points: Rect[] = [];
   const pointIsTop: boolean[] = [];
@@ -52,7 +54,7 @@ export function computeLayout(width: number, height: number): BoardLayout {
     const isTop = p >= 13;
     const column = columnForPoint(p);
     points.push({
-      x: column * pointWidth,
+      x: innerX + column * pointWidth,
       y: isTop ? innerY : innerY + halfHeight,
       width: pointWidth,
       height: halfHeight,
@@ -60,8 +62,8 @@ export function computeLayout(width: number, height: number): BoardLayout {
     pointIsTop.push(isTop);
   }
 
-  const barX = 6 * pointWidth;
-  const offX = 13 * pointWidth;
+  const barX = innerX + 6 * pointWidth;
+  const offX = innerX + 13 * pointWidth;
   const topHalf = (x: number): Rect => ({ x, y: innerY, width: pointWidth, height: halfHeight });
   const bottomHalf = (x: number): Rect => ({ x, y: innerY + halfHeight, width: pointWidth, height: halfHeight });
 
@@ -69,7 +71,7 @@ export function computeLayout(width: number, height: number): BoardLayout {
     width,
     height,
     pointWidth,
-    frameHeight,
+    frameThickness,
     checkerRadius: pointWidth * 0.44,
     points,
     pointIsTop,

@@ -86,15 +86,17 @@ function BoardInner({ layout }: { layout: BoardLayout }) {
 }
 
 function BoardBackground({ layout }: { layout: BoardLayout }) {
-  const { width, height, frameHeight, barColumn, offColumn } = layout;
+  const { width, height, frameThickness, barColumn, offColumn } = layout;
   const triangleHeight = layout.points[0].height * 0.9;
   return (
     <Svg width={width} height={height}>
       <SvgRect x={0} y={0} width={width} height={height} fill={boardTheme.felt} />
       <SvgRect {...offColumn} fill={boardTheme.offTray} />
       <SvgRect {...barColumn} fill={boardTheme.frame} />
-      <SvgRect x={0} y={0} width={width} height={frameHeight} fill={boardTheme.frame} />
-      <SvgRect x={0} y={height - frameHeight} width={width} height={frameHeight} fill={boardTheme.frame} />
+      <SvgRect x={0} y={0} width={width} height={frameThickness} fill={boardTheme.frame} />
+      <SvgRect x={0} y={height - frameThickness} width={width} height={frameThickness} fill={boardTheme.frame} />
+      <SvgRect x={0} y={0} width={frameThickness} height={height} fill={boardTheme.frame} />
+      <SvgRect x={width - frameThickness} y={0} width={frameThickness} height={height} fill={boardTheme.frame} />
       {layout.points.map((rect, i) => {
         const isTop = layout.pointIsTop[i];
         const baseY = isTop ? rect.y : rect.y + rect.height;
