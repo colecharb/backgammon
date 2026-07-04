@@ -31,7 +31,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   frame: {
-    aspectRatio: 15 / 11,
+    aspectRatio: 14.5 / 10.5,
     maxHeight: "100%",
   },
   reset: {

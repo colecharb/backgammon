@@ -24,7 +24,7 @@ export interface BoardLayout {
   width: number;
   height: number;
   pointWidth: number;
-  /** Frame strips on all four sides, half the bar's width. */
+  /** Frame strips on all four sides, a quarter of the bar's width. */
   frameThickness: number;
   checkerRadius: number;
   /** Full half-height column per point — also the tap target. */
@@ -40,9 +40,9 @@ export interface BoardLayout {
 const COLUMNS = 14; // 12 points + bar + off tray
 
 export function computeLayout(width: number, height: number): BoardLayout {
-  // 14 columns plus a half-width frame strip on each side = 15 point widths.
-  const pointWidth = width / (COLUMNS + 1);
-  const frameThickness = pointWidth / 2;
+  // 14 columns plus a quarter-width frame strip on each side = 14.5 point widths.
+  const pointWidth = width / (COLUMNS + 0.5);
+  const frameThickness = pointWidth / 4;
   const innerX = frameThickness;
   const innerY = frameThickness;
   const innerHeight = height - 2 * frameThickness;
