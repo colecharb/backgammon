@@ -2,8 +2,8 @@ export const boardTheme = {
   felt: "#fec",
   frame: "#503830",
   pointLight: "#b97",
-  pointDark: "#865",
-  offTray: "#865",
+  pointDark: "#754",
+  offTray: "#754",
   checker: {
     white: {
       fill: "#f4efe3",

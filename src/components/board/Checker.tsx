@@ -39,7 +39,7 @@ export function Checker({ cx, cy, radius, player, selected }: Props) {
           width: ringSize,
           height: ringSize,
           borderRadius: ringSize / 2,
-          borderWidth: 4,
+          borderWidth: 3,
           borderColor: colors.ring,
         }}
       />
