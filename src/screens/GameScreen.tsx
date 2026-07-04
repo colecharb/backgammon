@@ -1,7 +1,7 @@
 import { useSetAtom } from "jotai";
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Board } from "../components/board/Board";
 import { GameHeader } from "../components/hud/GameHeader";
 import { Hud } from "../components/hud/Hud";
@@ -9,8 +9,16 @@ import { newGameAtom } from "../state/game";
 
 export function GameScreen() {
   const reset = useSetAtom(newGameAtom);
+  // Only inset horizontally (notch sides); the board runs edge-to-edge
+  // vertically.
+  const insets = useSafeAreaInsets();
   return (
-    <SafeAreaView style={styles.screen}>
+    <View
+      style={[
+        styles.screen,
+        { paddingLeft: insets.left, paddingRight: insets.right },
+      ]}
+    >
       <View style={styles.side}>
         <GameHeader />
       </View>
@@ -24,7 +32,7 @@ export function GameScreen() {
           <Text style={styles.resetLabel}>Reset game</Text>
         </Pressable>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
