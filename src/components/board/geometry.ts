@@ -24,6 +24,8 @@ export interface BoardLayout {
   width: number;
   height: number;
   pointWidth: number;
+  /** Top and bottom frame strips, half the bar's width. */
+  frameHeight: number;
   checkerRadius: number;
   /** Full half-height column per point — also the tap target. */
   points: Rect[];
@@ -39,7 +41,10 @@ const COLUMNS = 14; // 12 points + bar + off tray
 
 export function computeLayout(width: number, height: number): BoardLayout {
   const pointWidth = width / COLUMNS;
-  const halfHeight = height / 2;
+  const frameHeight = pointWidth / 2;
+  const innerY = frameHeight;
+  const innerHeight = height - 2 * frameHeight;
+  const halfHeight = innerHeight / 2;
   const points: Rect[] = [];
   const pointIsTop: boolean[] = [];
 
@@ -48,7 +53,7 @@ export function computeLayout(width: number, height: number): BoardLayout {
     const column = columnForPoint(p);
     points.push({
       x: column * pointWidth,
-      y: isTop ? 0 : halfHeight,
+      y: isTop ? innerY : innerY + halfHeight,
       width: pointWidth,
       height: halfHeight,
     });
@@ -57,20 +62,21 @@ export function computeLayout(width: number, height: number): BoardLayout {
 
   const barX = 6 * pointWidth;
   const offX = 13 * pointWidth;
-  const topHalf = (x: number): Rect => ({ x, y: 0, width: pointWidth, height: halfHeight });
-  const bottomHalf = (x: number): Rect => ({ x, y: halfHeight, width: pointWidth, height: halfHeight });
+  const topHalf = (x: number): Rect => ({ x, y: innerY, width: pointWidth, height: halfHeight });
+  const bottomHalf = (x: number): Rect => ({ x, y: innerY + halfHeight, width: pointWidth, height: halfHeight });
 
   return {
     width,
     height,
     pointWidth,
+    frameHeight,
     checkerRadius: pointWidth * 0.44,
     points,
     pointIsTop,
     bar: { black: topHalf(barX), white: bottomHalf(barX) },
     off: { black: topHalf(offX), white: bottomHalf(offX) },
-    barColumn: { x: barX, y: 0, width: pointWidth, height },
-    offColumn: { x: offX, y: 0, width: pointWidth, height },
+    barColumn: { x: barX, y: innerY, width: pointWidth, height: innerHeight },
+    offColumn: { x: offX, y: innerY, width: pointWidth, height: innerHeight },
   };
 }
 
