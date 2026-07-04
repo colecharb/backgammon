@@ -92,7 +92,7 @@ function BoardBackground({ layout }: { layout: BoardLayout }) {
     <Svg width={width} height={height}>
       <SvgRect x={0} y={0} width={width} height={height} fill={boardTheme.felt} />
       <SvgRect {...offColumn} fill={boardTheme.offTray} />
-      <SvgRect {...barColumn} fill={boardTheme.bar} />
+      <SvgRect {...barColumn} fill={boardTheme.frame} />
       <SvgRect x={0} y={0} width={width} height={frameHeight} fill={boardTheme.frame} />
       <SvgRect x={0} y={height - frameHeight} width={width} height={frameHeight} fill={boardTheme.frame} />
       {layout.points.map((rect, i) => {
