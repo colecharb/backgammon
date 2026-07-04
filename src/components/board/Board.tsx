@@ -91,8 +91,10 @@ function BoardBackground({ layout }: { layout: BoardLayout }) {
   return (
     <Svg width={width} height={height}>
       <SvgRect x={0} y={0} width={width} height={height} fill={boardTheme.felt} />
-      <SvgRect {...offColumn} fill={boardTheme.offTray} />
-      <SvgRect {...barColumn} fill={boardTheme.frame} />
+      {/* Bar and tray run full height; the frame strips below overlap their
+          ends so no sub-pixel seam can show between them. */}
+      <SvgRect x={offColumn.x} y={0} width={offColumn.width} height={height} fill={boardTheme.offTray} />
+      <SvgRect x={barColumn.x} y={0} width={barColumn.width} height={height} fill={boardTheme.frame} />
       <SvgRect x={0} y={0} width={width} height={frameThickness} fill={boardTheme.frame} />
       <SvgRect x={0} y={height - frameThickness} width={width} height={frameThickness} fill={boardTheme.frame} />
       <SvgRect x={0} y={0} width={frameThickness} height={height} fill={boardTheme.frame} />
