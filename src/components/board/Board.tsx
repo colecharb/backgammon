@@ -4,6 +4,7 @@ import { StyleSheet, View } from 'react-native';
 import Svg, { Polygon, Rect as SvgRect } from 'react-native-svg';
 import { CheckerLocation, Player } from '../../engine/types';
 import { gameStateAtom } from '../../state/game';
+import { BoardDice } from './BoardDice';
 import { Checker } from './Checker';
 import { BoardLayout, checkerCenter, computeLayout } from './geometry';
 import { LocationPressable } from './LocationPressable';
@@ -81,6 +82,7 @@ function BoardInner({ layout }: { layout: BoardLayout }) {
           <LocationPressable rect={layout.off[player]} location="off" player={player} />
         </React.Fragment>
       ))}
+      <BoardDice layout={layout} />
     </View>
   );
 }

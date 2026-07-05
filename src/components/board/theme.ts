@@ -25,7 +25,7 @@ export const brownBoardTheme = {
 export const greenBoardTheme = {
   felt: "#ebecd0",
   frame: "#312e2b",
-  pointLight: "#86a666",
+  pointLight: "#96b686",
   pointDark: "#5d7a43",
   offTray: "#5d7a43",
   checker: checkers,
@@ -35,4 +35,4 @@ export const greenBoardTheme = {
 export type BoardTheme = typeof brownBoardTheme | typeof greenBoardTheme;
 
 // The active theme — swap here.
-export const boardTheme: BoardTheme = greenBoardTheme;
+export const boardTheme: BoardTheme = brownBoardTheme;
