@@ -1,7 +1,11 @@
 import { useAtomValue, useSetAtom } from "jotai";
 import React from "react";
 import { Pressable, StyleSheet, Text, useWindowDimensions } from "react-native";
-import { canDoubleAtom, gameStateAtom, offerDoubleAtom } from "../../state/game";
+import {
+  canDoubleAtom,
+  gameStateAtom,
+  offerDoubleAtom,
+} from "../../state/game";
 import { BoardLayout } from "./geometry";
 import { boardTheme } from "./theme";
 
@@ -34,14 +38,12 @@ export function BoardCube({ layout }: { layout: BoardLayout }) {
       : landscape
         ? {
             left: layout.width + EDGE_GAP,
-            top: owner === "black" ? 0 : layout.height - size,
+            top: owner === "black" ? 8 : layout.height - size - 8,
           }
         : {
             left: trayX,
             top:
-              owner === "black"
-                ? -(size + EDGE_GAP)
-                : layout.height + EDGE_GAP,
+              owner === "black" ? -(size + EDGE_GAP) : layout.height + EDGE_GAP,
           };
 
   return (

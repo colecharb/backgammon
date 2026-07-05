@@ -1,17 +1,10 @@
-import { useSetAtom } from "jotai";
 import React from "react";
-import {
-  Pressable,
-  StyleSheet,
-  Text,
-  useWindowDimensions,
-  View,
-} from "react-native";
+import { StyleSheet, useWindowDimensions, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Board } from "../components/board/Board";
 import { GameHeader } from "../components/hud/GameHeader";
+import { GameMenu } from "../components/hud/GameMenu";
 import { Hud } from "../components/hud/Hud";
-import { newGameAtom } from "../state/game";
 
 /**
  * Adapts to orientation: landscape puts the panels beside the board and
@@ -19,7 +12,6 @@ import { newGameAtom } from "../state/game";
  * portrait stacks them and does the reverse.
  */
 export function GameScreen() {
-  const reset = useSetAtom(newGameAtom);
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const landscape = width > height;
@@ -46,10 +38,7 @@ export function GameScreen() {
       </View>
       <View style={styles.side}>
         <Hud />
-        {/* Debug helper: wipe back to the starting position from any state. */}
-        <Pressable style={styles.reset} onPress={reset} hitSlop={8}>
-          <Text style={styles.resetLabel}>Reset game</Text>
-        </Pressable>
+        <GameMenu />
       </View>
     </View>
   );
@@ -79,14 +68,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 12,
-  },
-  reset: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-  },
-  resetLabel: {
-    color: "#8a877f",
-    fontSize: 13,
-    fontWeight: "600",
   },
 });
