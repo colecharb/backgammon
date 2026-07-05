@@ -36,7 +36,17 @@ export interface DoublingCube {
   owner: Player | null;
 }
 
-export type GamePhase = 'rolling' | 'moving' | 'gameOver';
+/** 'doubled' = a double has been offered and awaits take/drop. */
+export type GamePhase = 'rolling' | 'doubled' | 'moving' | 'gameOver';
+
+export type WinKind = 'single' | 'gammon' | 'backgammon' | 'drop';
+
+export interface GameResult {
+  winner: Player;
+  kind: WinKind;
+  /** Cube value times the win multiplier (drop pays the pre-double stake). */
+  points: number;
+}
 
 export interface GameState {
   board: BoardState;
@@ -47,4 +57,6 @@ export interface GameState {
   /** Append-only log of applied moves — the undo/replay/sync primitive. */
   history: Move[];
   cube: DoublingCube;
+  /** Set once the game ends, by bear-off or a dropped double. */
+  result: GameResult | null;
 }

@@ -35,6 +35,7 @@ function makeState(board: BoardState, turn: Player, dice: number[]): GameState {
     dice: dice.map((value) => ({ value, used: false })),
     history: [],
     cube: { value: 1, owner: null },
+    result: null,
   };
 }
 

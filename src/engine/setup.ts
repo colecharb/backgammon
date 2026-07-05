@@ -38,5 +38,6 @@ export function initialGameState(): GameState {
     dice: [],
     history: [],
     cube: { value: 1, owner: null },
+    result: null,
   };
 }

@@ -1,4 +1,5 @@
 import { CHECKERS_PER_PLAYER, getPoint, isPointIndex, opponent } from './helpers';
+import { winKind, WIN_MULTIPLIER } from './score';
 import { BoardState, Die, GameState, Move, Player, PointIndex } from './types';
 
 /**
@@ -42,11 +43,21 @@ export function applyMove(state: GameState, move: Move): GameState {
   const { board, hit } = applyMoveToBoard(state.board, move.player, move.from, move.to);
   const dice = move.die === undefined ? state.dice : consumeDie(state.dice, move.die);
   const gameOver = board.off[move.player] === CHECKERS_PER_PLAYER;
+  let result = state.result;
+  if (gameOver) {
+    const kind = winKind(board, move.player);
+    result = {
+      winner: move.player,
+      kind,
+      points: state.cube.value * WIN_MULTIPLIER[kind],
+    };
+  }
   return {
     ...state,
     board,
     dice,
     phase: gameOver ? 'gameOver' : state.phase,
+    result,
     history: [...state.history, { ...move, hit }],
   };
 }
@@ -64,6 +75,7 @@ export function undoLastMove(state: GameState): GameState {
     board,
     dice: move.die === undefined ? state.dice : restoreDie(state.dice, move.die),
     phase: state.phase === 'gameOver' ? 'moving' : state.phase,
+    result: state.phase === 'gameOver' ? null : state.result,
     history: state.history.slice(0, -1),
   };
 }
@@ -74,10 +86,7 @@ export function endTurn(state: GameState): GameState {
 }
 
 export function winner(state: GameState): Player | null {
-  for (const player of ['white', 'black'] as const) {
-    if (state.board.off[player] === CHECKERS_PER_PLAYER) return player;
-  }
-  return null;
+  return state.result?.winner ?? null;
 }
 
 function consumeDie(dice: Die[], value: number): Die[] {

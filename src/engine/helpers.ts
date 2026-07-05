@@ -41,6 +41,11 @@ export function destinationFor(
   return dest;
 }
 
+/** Whether `point` lies in `player`'s home board (white 1–6, black 19–24). */
+export function isInHomeBoard(player: Player, point: PointIndex): boolean {
+  return player === 'white' ? point <= 6 : point >= 19;
+}
+
 /** Pips remaining to bear off everything; a checker on the bar counts as 25. */
 export function pipCount(board: BoardState, player: Player): number {
   let pips = board.bar[player] * (POINT_COUNT + 1);
