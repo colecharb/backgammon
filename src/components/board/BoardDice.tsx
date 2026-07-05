@@ -107,7 +107,12 @@ export function BoardDice({ layout }: { layout: BoardLayout }) {
             i === activeIndex && styles.activeDie,
           ]}
         >
-          <DieFace value={die.value} size={dieSize} dimmed={die.used} />
+          <DieFace
+            value={die.value}
+            size={dieSize}
+            player={game.turn}
+            dimmed={die.used}
+          />
         </View>
       ))}
     </Pressable>

@@ -1,5 +1,6 @@
 import React from 'react';
 import Svg, { Circle, Rect } from 'react-native-svg';
+import { Player } from '../../engine/types';
 import { boardTheme } from '../board/theme';
 
 const PIP_GRID: Record<number, [number, number][]> = {
@@ -14,10 +15,17 @@ const PIP_GRID: Record<number, [number, number][]> = {
 interface Props {
   value: number;
   size: number;
+  /** Dice match their roller's checkers, pips in the opposing color. */
+  player?: Player;
   dimmed?: boolean;
 }
 
-export function DieFace({ value, size, dimmed = false }: Props) {
+export function DieFace({ value, size, player = 'white', dimmed = false }: Props) {
+  const face = boardTheme.checker[player];
+  const pipColor =
+    player === 'white'
+      ? boardTheme.checker.black.fill
+      : boardTheme.checker.white.fill;
   const pipR = size * 0.09;
   const cell = size / 4;
   return (
@@ -28,8 +36,8 @@ export function DieFace({ value, size, dimmed = false }: Props) {
         width={size - 2}
         height={size - 2}
         rx={size * 0.18}
-        fill={boardTheme.checker.white.fill}
-        stroke={boardTheme.checker.white.stroke}
+        fill={face.fill}
+        stroke={face.stroke}
         strokeWidth={1.5}
       />
       {(PIP_GRID[value] ?? []).map(([col, row], i) => (
@@ -38,7 +46,7 @@ export function DieFace({ value, size, dimmed = false }: Props) {
           cx={cell + col * cell}
           cy={cell + row * cell}
           r={pipR}
-          fill={boardTheme.checker.black.fill}
+          fill={pipColor}
         />
       ))}
     </Svg>
