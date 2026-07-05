@@ -38,12 +38,14 @@ export function BoardDice({ layout }: { layout: BoardLayout }) {
 
   if (game.phase === "gameOver") return null;
 
+  // Half-board centers: point columns 0–5 (left) and 7–12 (right).
+  const halfCenterX = (player: "white" | "black") =>
+    layout.frameThickness + (player === "white" ? 10 : 3) * layout.pointWidth;
+
   // Whoever must act: the turn player, except a pending double is the
   // opponent's decision.
   const actor = game.phase === "doubled" ? opponent(game.turn) : game.turn;
-  // Half-board centers: point columns 0–5 (left) and 7–12 (right).
-  const centerX =
-    layout.frameThickness + (actor === "white" ? 10 : 3) * layout.pointWidth;
+  const centerX = halfCenterX(actor);
 
   const actionArea = (children: React.ReactNode) => (
     <View
@@ -78,10 +80,51 @@ export function BoardDice({ layout }: { layout: BoardLayout }) {
   }
 
   const dieSize = layout.pointWidth * 0.9;
+  const turnDone = legalMoves.length === 0;
+
+  // The opening roll is one die per player: show each on its owner's half
+  // until the winner starts playing. The winner rolled the higher die.
+  const openingReveal =
+    game.history.length === 0 && !game.dice.some((d) => d.used);
+  if (openingReveal && game.dice.length === 2) {
+    const values = game.dice.map((d) => d.value);
+    const hi = Math.max(...values);
+    const lo = Math.min(...values);
+    return (
+      <>
+        {(["white", "black"] as const).map((player) => {
+          const value = player === game.turn ? hi : lo;
+          return (
+            <Pressable
+              key={player}
+              style={[
+                styles.dice,
+                {
+                  left: halfCenterX(player) - dieSize / 2,
+                  top: layout.height / 2 - dieSize / 2,
+                },
+              ]}
+              onPress={turnDone ? endTurn : swap}
+              hitSlop={12}
+            >
+              <View
+                style={[
+                  styles.die,
+                  !turnDone && value === currentDie && styles.activeDie,
+                ]}
+              >
+                <DieFace value={value} size={dieSize} player={player} />
+              </View>
+            </Pressable>
+          );
+        })}
+      </>
+    );
+  }
+
   const rowWidth =
     game.dice.length * dieSize + (game.dice.length - 1) * DIE_GAP;
 
-  const turnDone = legalMoves.length === 0;
   const activeIndex = turnDone
     ? -1
     : game.dice.findIndex((d) => !d.used && d.value === currentDie);
