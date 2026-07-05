@@ -39,6 +39,9 @@ export interface BoardLayout {
 
 const COLUMNS = 14; // 12 points + bar + off tray
 
+/** A stack's maximum visual height, in checker diameters. */
+const MAX_STACK_DIAMETERS = 5;
+
 export function computeLayout(width: number, height: number): BoardLayout {
   // 14 columns plus quarter-width frame strips on each side and one more
   // between the felt and the off tray = 14.75 point widths.
@@ -107,9 +110,11 @@ export function checkerCenter(
 ): { x: number; y: number } {
   const { rect, isTop } = frameFor(layout, location, player);
   const r = layout.checkerRadius;
-  const usable = rect.height - 2 * r;
+  // Stacks never grow taller than five checkers; beyond that they compress
+  // into the same span, keeping clear space toward the middle of the board.
+  const maxSpan = Math.min(rect.height, MAX_STACK_DIAMETERS * 2 * r);
   const spacing =
-    stackCount > 1 ? Math.min(2 * r, usable / (stackCount - 1)) : 0;
+    stackCount > 1 ? Math.min(2 * r, (maxSpan - 2 * r) / (stackCount - 1)) : 0;
   const anchorTop = location === 'bar' ? !isTop : isTop;
   const grow = anchorTop ? 1 : -1;
   const base = anchorTop ? rect.y + r : rect.y + rect.height - r;
