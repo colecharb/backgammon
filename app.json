@@ -3,7 +3,7 @@
     "name": "backgammon",
     "slug": "backgammon",
     "version": "1.0.0",
-    "orientation": "landscape",
+    "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
@@ -20,6 +20,18 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "45cb1e92-b55f-4318-bf0e-631e17801e8d"
+      }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/45cb1e92-b55f-4318-bf0e-631e17801e8d"
+    },
+    "owner": "colecharb"
   }
 }

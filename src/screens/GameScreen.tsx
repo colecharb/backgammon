@@ -1,28 +1,47 @@
 import { useSetAtom } from "jotai";
 import React from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  Pressable,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Board } from "../components/board/Board";
 import { GameHeader } from "../components/hud/GameHeader";
 import { Hud } from "../components/hud/Hud";
 import { newGameAtom } from "../state/game";
 
+/**
+ * Adapts to orientation: landscape puts the panels beside the board and
+ * insets only the notch sides so the board runs edge-to-edge vertically;
+ * portrait stacks them and does the reverse.
+ */
 export function GameScreen() {
   const reset = useSetAtom(newGameAtom);
-  // Only inset horizontally (notch sides); the board runs edge-to-edge
-  // vertically.
   const insets = useSafeAreaInsets();
+  const { width, height } = useWindowDimensions();
+  const landscape = width > height;
+
+  const orientationStyle = landscape
+    ? {
+        flexDirection: "row" as const,
+        paddingLeft: insets.left,
+        paddingRight: insets.right,
+      }
+    : {
+        flexDirection: "column" as const,
+        paddingTop: insets.top,
+        paddingBottom: insets.bottom,
+      };
+
   return (
-    <View
-      style={[
-        styles.screen,
-        { paddingLeft: insets.left, paddingRight: insets.right },
-      ]}
-    >
+    <View style={[styles.screen, orientationStyle]}>
       <View style={styles.side}>
         <GameHeader />
       </View>
-      <View style={styles.frame}>
+      <View style={landscape ? styles.frameLandscape : styles.framePortrait}>
         <Board />
       </View>
       <View style={styles.side}>
@@ -36,17 +55,23 @@ export function GameScreen() {
   );
 }
 
+const BOARD_ASPECT = 14.75 / 10.5;
+
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    flexDirection: "row",
     backgroundColor: "#1b1b1f",
     alignItems: "center",
     justifyContent: "center",
   },
-  frame: {
-    aspectRatio: 14.75 / 10.5,
+  frameLandscape: {
+    aspectRatio: BOARD_ASPECT,
     height: "100%",
+    flexShrink: 1,
+  },
+  framePortrait: {
+    aspectRatio: BOARD_ASPECT,
+    width: "100%",
     flexShrink: 1,
   },
   side: {
