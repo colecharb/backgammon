@@ -1,11 +1,16 @@
 import { useAtomValue, useSetAtom } from "jotai";
 import React from "react";
 import { Pressable, StyleSheet, View } from "react-native";
+import { opponent } from "../../engine/helpers";
 import {
+  acceptDoubleAtom,
+  canDoubleAtom,
   currentDieAtom,
+  declineDoubleAtom,
   endTurnAtom,
   gameStateAtom,
   legalMovesAtom,
+  offerDoubleAtom,
   rollAtom,
   swapDiceAtom,
 } from "../../state/game";
@@ -17,45 +22,76 @@ import { boardTheme } from "./theme";
 const DIE_GAP = 6;
 
 /**
- * Dice controls on the mover's half of the felt, like a real roll: white
- * plays on the right half, black on the left. While waiting for a roll it
- * shows the roll button there; after, the rolled dice — tap to swap play
- * order, or to finish the turn once nothing is playable.
+ * Dice-related controls on the felt, placed on the half of whoever must
+ * act: the roll/double buttons before a roll, take/drop while a double is
+ * pending, and the rolled dice while moving (tap to swap play order, or
+ * to finish the turn once nothing is playable). White acts on the right
+ * half, black on the left.
  */
 export function BoardDice({ layout }: { layout: BoardLayout }) {
   const game = useAtomValue(gameStateAtom);
   const legalMoves = useAtomValue(legalMovesAtom);
   const currentDie = useAtomValue(currentDieAtom);
+  const canDouble = useAtomValue(canDoubleAtom);
   const roll = useSetAtom(rollAtom);
   const swap = useSetAtom(swapDiceAtom);
   const endTurn = useSetAtom(endTurnAtom);
+  const offerDouble = useSetAtom(offerDoubleAtom);
+  const acceptDouble = useSetAtom(acceptDoubleAtom);
+  const declineDouble = useSetAtom(declineDoubleAtom);
 
   if (game.phase === "gameOver") return null;
 
-  const dieSize = layout.pointWidth * 0.9;
+  // Whoever must act: the turn player, except a pending double is the
+  // opponent's decision.
+  const actor = game.phase === "doubled" ? opponent(game.turn) : game.turn;
   // Half-board centers: point columns 0–5 (left) and 7–12 (right).
   const centerX =
-    layout.frameThickness +
-    (game.turn === "white" ? 10 : 3) * layout.pointWidth;
+    layout.frameThickness + (actor === "white" ? 10 : 3) * layout.pointWidth;
+
+  const actionArea = (children: React.ReactNode) => (
+    <View
+      pointerEvents="box-none"
+      style={[
+        styles.actionArea,
+        {
+          left: centerX - 3 * layout.pointWidth,
+          width: 6 * layout.pointWidth,
+          height: layout.height,
+        },
+      ]}
+    >
+      {children}
+    </View>
+  );
 
   if (game.phase === "rolling") {
-    return (
-      <View
-        pointerEvents="box-none"
-        style={[
-          styles.rollArea,
-          {
-            left: centerX - 3 * layout.pointWidth,
-            width: 6 * layout.pointWidth,
-            height: layout.height,
-          },
-        ]}
-      >
+    return actionArea(
+      <>
         <HudButton label="Roll" onPress={roll} />
-      </View>
+        {canDouble && (
+          <HudButton
+            label={`Double to ${game.cube.value * 2}`}
+            onPress={offerDouble}
+          />
+        )}
+      </>,
     );
   }
 
+  if (game.phase === "doubled") {
+    return actionArea(
+      <>
+        <HudButton
+          label={`Take ${game.cube.value * 2}`}
+          onPress={acceptDouble}
+        />
+        <HudButton label="Drop" onPress={declineDouble} />
+      </>,
+    );
+  }
+
+  const dieSize = layout.pointWidth * 0.9;
   const rowWidth =
     game.dice.length * dieSize + (game.dice.length - 1) * DIE_GAP;
 
@@ -93,11 +129,12 @@ export function BoardDice({ layout }: { layout: BoardLayout }) {
 }
 
 const styles = StyleSheet.create({
-  rollArea: {
+  actionArea: {
     position: "absolute",
     top: 0,
     alignItems: "center",
     justifyContent: "center",
+    gap: 12,
   },
   dice: {
     position: "absolute",

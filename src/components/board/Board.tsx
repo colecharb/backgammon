@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import Svg, { Polygon, Rect as SvgRect } from 'react-native-svg';
 import { CheckerLocation, Player } from '../../engine/types';
 import { gameStateAtom, rollAtom } from '../../state/game';
+import { BoardCube } from './BoardCube';
 import { BoardDice } from './BoardDice';
 import { Checker } from './Checker';
 import { BoardLayout, checkerCenter, computeLayout } from './geometry';
@@ -83,11 +84,13 @@ function BoardInner({ layout }: { layout: BoardLayout }) {
           <LocationPressable rect={layout.off[player]} location="off" player={player} />
         </React.Fragment>
       ))}
-      <BoardDice layout={layout} />
       {game.phase === 'rolling' && (
-        // Whole board doubles as the roll button while waiting on a roll.
+        // Whole board doubles as the roll button while waiting on a roll;
+        // rendered below the action buttons so Double stays tappable.
         <Pressable style={StyleSheet.absoluteFill} onPress={() => roll()} />
       )}
+      <BoardCube layout={layout} />
+      <BoardDice layout={layout} />
     </View>
   );
 }

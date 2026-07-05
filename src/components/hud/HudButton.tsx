@@ -18,13 +18,15 @@ export function HudButton({
 
 const styles = StyleSheet.create({
   button: {
-    backgroundColor: boardTheme.frame,
-    paddingHorizontal: 18,
-    paddingVertical: 8,
+    // backgroundColor: boardTheme.frame,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     borderRadius: 8,
+    borderWidth: 2,
+    borderColor: boardTheme.pointDark,
   },
   buttonLabel: {
-    color: "#f1eadb",
+    color: boardTheme.pointDark,
     fontSize: 16,
     fontWeight: "700",
   },

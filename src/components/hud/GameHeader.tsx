@@ -3,10 +3,11 @@ import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import {
   canUndoAtom,
+  gameResultAtom,
   gameStateAtom,
   undoAtom,
-  winnerAtom,
 } from "../../state/game";
+import { GameResult } from "../../engine/types";
 import { boardTheme } from "../board/theme";
 import { HudButton } from "./HudButton";
 
@@ -15,18 +16,20 @@ import { HudButton } from "./HudButton";
 export function GameHeader() {
   const game = useAtomValue(gameStateAtom);
   const canUndo = useAtomValue(canUndoAtom);
-  const victor = useAtomValue(winnerAtom);
+  const result = useAtomValue(gameResultAtom);
   const undo = useSetAtom(undoAtom);
 
-  const label = victor
-    ? `${capitalize(victor)} wins!`
-    : game.phase === "rolling"
-      ? game.history.length === 0
-        ? "Roll for the opening"
-        : `${capitalize(game.turn)} to roll`
-      : `${capitalize(game.turn)} to play`;
+  const label = result
+    ? resultLabel(result)
+    : game.phase === "doubled"
+      ? `${capitalize(game.turn)} doubles to ${game.cube.value * 2}`
+      : game.phase === "rolling"
+        ? game.history.length === 0
+          ? "Roll for the opening"
+          : `${capitalize(game.turn)} to roll`
+        : `${capitalize(game.turn)} to play`;
 
-  const badgePlayer = victor ?? game.turn;
+  const badgePlayer = result?.winner ?? game.turn;
   return (
     <View style={styles.header}>
       <View style={styles.status}>
@@ -53,6 +56,21 @@ function TurnBadge({ player }: { player: "white" | "black" }) {
       ]}
     />
   );
+}
+
+function resultLabel({ winner, kind, points }: GameResult): string {
+  const name = capitalize(winner);
+  const pts = `${points} ${points === 1 ? "point" : "points"}`;
+  switch (kind) {
+    case "drop":
+      return `${name} wins ${pts} — double dropped`;
+    case "gammon":
+      return `${name} wins a gammon — ${pts}`;
+    case "backgammon":
+      return `${name} wins a backgammon — ${pts}`;
+    default:
+      return `${name} wins — ${pts}`;
+  }
 }
 
 function capitalize(s: string): string {

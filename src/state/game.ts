@@ -1,4 +1,10 @@
 import { atom } from 'jotai';
+import {
+  acceptDouble,
+  canOfferDouble,
+  declineDouble,
+  offerDouble,
+} from '../engine/cube';
 import { isOpeningRoll, rollOpening, rollTurn, swapDice } from '../engine/dice';
 import { getPoint, isPointIndex } from '../engine/helpers';
 import { applyMove, endTurn, undoLastMove, winner } from '../engine/moves';
@@ -39,6 +45,23 @@ export const canUndoAtom = atom((get) =>
 );
 
 export const winnerAtom = atom((get) => winner(get(gameStateAtom)));
+
+export const gameResultAtom = atom((get) => get(gameStateAtom).result);
+
+export const canDoubleAtom = atom((get) => canOfferDouble(get(gameStateAtom)));
+
+export const offerDoubleAtom = atom(null, (get, set) => {
+  if (!get(canDoubleAtom)) return;
+  set(gameStateAtom, offerDouble(get(gameStateAtom)));
+});
+
+export const acceptDoubleAtom = atom(null, (get, set) => {
+  set(gameStateAtom, acceptDouble(get(gameStateAtom)));
+});
+
+export const declineDoubleAtom = atom(null, (get, set) => {
+  set(gameStateAtom, declineDouble(get(gameStateAtom)));
+});
 
 export const rollAtom = atom(null, (get, set) => {
   const game = get(gameStateAtom);

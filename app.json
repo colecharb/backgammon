@@ -23,15 +23,15 @@
     },
     "extra": {
       "eas": {
-        "projectId": "45cb1e92-b55f-4318-bf0e-631e17801e8d"
+        "projectId": "f511a074-7ef3-4683-b30b-7314a8f5016a"
       }
     },
     "runtimeVersion": {
       "policy": "appVersion"
     },
     "updates": {
-      "url": "https://u.expo.dev/45cb1e92-b55f-4318-bf0e-631e17801e8d"
+      "url": "https://u.expo.dev/f511a074-7ef3-4683-b30b-7314a8f5016a"
     },
-    "owner": "colecharb"
+    "owner": "backgammon"
   }
 }
