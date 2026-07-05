@@ -6,33 +6,56 @@ import {
   endTurnAtom,
   gameStateAtom,
   legalMovesAtom,
+  rollAtom,
   swapDiceAtom,
 } from "../../state/game";
 import { DieFace } from "../hud/DieFace";
+import { HudButton } from "../hud/HudButton";
 import { BoardLayout } from "./geometry";
 import { boardTheme } from "./theme";
 
 const DIE_GAP = 6;
 
 /**
- * The rolled dice, sitting on the mover's half of the felt like a real
- * roll: white plays on the right half, black on the left. Tap to swap
- * play order, or to finish the turn once nothing is playable.
+ * Dice controls on the mover's half of the felt, like a real roll: white
+ * plays on the right half, black on the left. While waiting for a roll it
+ * shows the roll button there; after, the rolled dice — tap to swap play
+ * order, or to finish the turn once nothing is playable.
  */
 export function BoardDice({ layout }: { layout: BoardLayout }) {
   const game = useAtomValue(gameStateAtom);
   const legalMoves = useAtomValue(legalMovesAtom);
   const currentDie = useAtomValue(currentDieAtom);
+  const roll = useSetAtom(rollAtom);
   const swap = useSetAtom(swapDiceAtom);
   const endTurn = useSetAtom(endTurnAtom);
 
-  if (game.phase !== "moving") return null;
+  if (game.phase === "gameOver") return null;
 
   const dieSize = layout.pointWidth * 0.9;
   // Half-board centers: point columns 0–5 (left) and 7–12 (right).
   const centerX =
     layout.frameThickness +
     (game.turn === "white" ? 10 : 3) * layout.pointWidth;
+
+  if (game.phase === "rolling") {
+    return (
+      <View
+        pointerEvents="box-none"
+        style={[
+          styles.rollArea,
+          {
+            left: centerX - 3 * layout.pointWidth,
+            width: 6 * layout.pointWidth,
+            height: layout.height,
+          },
+        ]}
+      >
+        <HudButton label="Roll" onPress={roll} />
+      </View>
+    );
+  }
+
   const rowWidth =
     game.dice.length * dieSize + (game.dice.length - 1) * DIE_GAP;
 
@@ -70,6 +93,12 @@ export function BoardDice({ layout }: { layout: BoardLayout }) {
 }
 
 const styles = StyleSheet.create({
+  rollArea: {
+    position: "absolute",
+    top: 0,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   dice: {
     position: "absolute",
     flexDirection: "row",
