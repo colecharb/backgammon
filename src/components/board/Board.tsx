@@ -1,9 +1,9 @@
-import { useAtomValue } from 'jotai';
+import { useAtomValue, useSetAtom } from 'jotai';
 import React, { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import Svg, { Polygon, Rect as SvgRect } from 'react-native-svg';
 import { CheckerLocation, Player } from '../../engine/types';
-import { gameStateAtom } from '../../state/game';
+import { gameStateAtom, rollAtom } from '../../state/game';
 import { BoardDice } from './BoardDice';
 import { Checker } from './Checker';
 import { BoardLayout, checkerCenter, computeLayout } from './geometry';
@@ -29,6 +29,7 @@ export function Board() {
 
 function BoardInner({ layout }: { layout: BoardLayout }) {
   const game = useAtomValue(gameStateAtom);
+  const roll = useSetAtom(rollAtom);
 
   interface RenderedChecker {
     key: string;
@@ -83,6 +84,10 @@ function BoardInner({ layout }: { layout: BoardLayout }) {
         </React.Fragment>
       ))}
       <BoardDice layout={layout} />
+      {game.phase === 'rolling' && (
+        // Whole board doubles as the roll button while waiting on a roll.
+        <Pressable style={StyleSheet.absoluteFill} onPress={() => roll()} />
+      )}
     </View>
   );
 }
