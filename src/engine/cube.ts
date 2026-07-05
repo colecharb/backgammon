@@ -22,6 +22,12 @@ export function offerDouble(state: GameState): GameState {
   return { ...state, phase: 'doubled' };
 }
 
+/** Withdraw a pending offer (a UI courtesy, not a backgammon rule). */
+export function retractDouble(state: GameState): GameState {
+  if (state.phase !== 'doubled') throw new Error('No double to retract');
+  return { ...state, phase: 'rolling' };
+}
+
 /** The opponent takes: stake doubles, they own the cube, offerer rolls. */
 export function acceptDouble(state: GameState): GameState {
   if (state.phase !== 'doubled') throw new Error('No double to accept');

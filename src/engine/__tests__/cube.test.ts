@@ -4,6 +4,7 @@ import {
   canOfferDouble,
   declineDouble,
   offerDouble,
+  retractDouble,
 } from '../cube';
 import { applyMove } from '../moves';
 import { winKind } from '../score';
@@ -54,6 +55,11 @@ describe('doubling', () => {
     expect(taken.cube).toEqual({ value: 2, owner: 'white' }); // black offered
     expect(taken.phase).toBe('rolling');
     expect(taken.turn).toBe('black'); // offerer still to roll
+  });
+
+  it('a pending offer can be retracted back to rolling', () => {
+    const offered = offerDouble(midGame());
+    expect(retractDouble(offered)).toEqual(midGame());
   });
 
   it('drop ends the game at the pre-double stake', () => {

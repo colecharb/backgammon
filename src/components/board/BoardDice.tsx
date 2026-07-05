@@ -4,13 +4,11 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { opponent } from "../../engine/helpers";
 import {
   acceptDoubleAtom,
-  canDoubleAtom,
   currentDieAtom,
   declineDoubleAtom,
   endTurnAtom,
   gameStateAtom,
   legalMovesAtom,
-  offerDoubleAtom,
   rollAtom,
   swapDiceAtom,
 } from "../../state/game";
@@ -32,11 +30,9 @@ export function BoardDice({ layout }: { layout: BoardLayout }) {
   const game = useAtomValue(gameStateAtom);
   const legalMoves = useAtomValue(legalMovesAtom);
   const currentDie = useAtomValue(currentDieAtom);
-  const canDouble = useAtomValue(canDoubleAtom);
   const roll = useSetAtom(rollAtom);
   const swap = useSetAtom(swapDiceAtom);
   const endTurn = useSetAtom(endTurnAtom);
-  const offerDouble = useSetAtom(offerDoubleAtom);
   const acceptDouble = useSetAtom(acceptDoubleAtom);
   const declineDouble = useSetAtom(declineDoubleAtom);
 
@@ -66,17 +62,7 @@ export function BoardDice({ layout }: { layout: BoardLayout }) {
   );
 
   if (game.phase === "rolling") {
-    return actionArea(
-      <>
-        <HudButton label="Roll" onPress={roll} />
-        {canDouble && (
-          <HudButton
-            label={`Double to ${game.cube.value * 2}`}
-            onPress={offerDouble}
-          />
-        )}
-      </>,
-    );
+    return actionArea(<HudButton label="Roll" onPress={roll} />);
   }
 
   if (game.phase === "doubled") {

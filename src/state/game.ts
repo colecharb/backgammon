@@ -4,6 +4,7 @@ import {
   canOfferDouble,
   declineDouble,
   offerDouble,
+  retractDouble,
 } from '../engine/cube';
 import { isOpeningRoll, rollOpening, rollTurn, swapDice } from '../engine/dice';
 import { getPoint, isPointIndex } from '../engine/helpers';
@@ -39,10 +40,14 @@ export const tappableSourcesAtom = atom((get) => {
   );
 });
 
-/** True once the player has consumed at least one die this turn. */
-export const canUndoAtom = atom((get) =>
-  get(gameStateAtom).dice.some((d) => d.used),
-);
+/**
+ * Undo is available after consuming a die this turn, or while a double
+ * offer is pending (fat-thumb insurance — undo retracts the offer).
+ */
+export const canUndoAtom = atom((get) => {
+  const game = get(gameStateAtom);
+  return game.phase === 'doubled' || game.dice.some((d) => d.used);
+});
 
 export const winnerAtom = atom((get) => winner(get(gameStateAtom)));
 
@@ -82,8 +87,13 @@ export const endTurnAtom = atom(null, (get, set) => {
 });
 
 export const undoAtom = atom(null, (get, set) => {
+  const game = get(gameStateAtom);
+  if (game.phase === 'doubled') {
+    set(gameStateAtom, retractDouble(game));
+    return;
+  }
   if (!get(canUndoAtom)) return;
-  set(gameStateAtom, undoLastMove(get(gameStateAtom)));
+  set(gameStateAtom, undoLastMove(game));
 });
 
 export const newGameAtom = atom(null, (_get, set) => {
