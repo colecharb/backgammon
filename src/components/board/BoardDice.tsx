@@ -9,6 +9,7 @@ import {
   endTurnAtom,
   gameStateAtom,
   legalMovesAtom,
+  playersAtom,
   rollAtom,
   swapDiceAtom,
 } from "../../state/game";
@@ -28,6 +29,7 @@ const DIE_GAP = 6;
  */
 export function BoardDice({ layout }: { layout: BoardLayout }) {
   const game = useAtomValue(gameStateAtom);
+  const players = useAtomValue(playersAtom);
   const legalMoves = useAtomValue(legalMovesAtom);
   const currentDie = useAtomValue(currentDieAtom);
   const roll = useSetAtom(rollAtom);
@@ -63,11 +65,16 @@ export function BoardDice({ layout }: { layout: BoardLayout }) {
     </View>
   );
 
+  // A computer actor rolls and answers doubles on its own — no buttons.
+  const actorIsComputer = players[actor] === "computer";
+
   if (game.phase === "rolling") {
+    if (actorIsComputer) return null;
     return actionArea(<HudButton label="Roll" onPress={roll} />);
   }
 
   if (game.phase === "doubled") {
+    if (actorIsComputer) return null;
     return actionArea(
       <>
         <HudButton
