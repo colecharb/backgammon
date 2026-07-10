@@ -1,6 +1,6 @@
 import { useAtomValue, useSetAtom } from "jotai";
-import React from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import React, { useMemo } from "react";
+import { Pressable, StyleSheet, View, ViewStyle } from "react-native";
 import { opponent } from "../../engine/helpers";
 import {
   acceptDoubleAtom,
@@ -19,6 +19,26 @@ import { BoardLayout } from "./geometry";
 import { boardTheme } from "./theme";
 
 const DIE_GAP = 6;
+/** Playful per-die tilt and nudge so a thrown pair never looks stamped-on. */
+const MAX_DIE_ROTATION = 16; // degrees
+const MAX_DIE_SHIFT = 0.1; // as a fraction of the die size
+
+interface DieJitter {
+  rotate: number;
+  dx: number;
+  dy: number;
+}
+
+function dieJitterStyle(jitter: DieJitter | undefined, size: number): ViewStyle | null {
+  if (!jitter) return null;
+  return {
+    transform: [
+      { translateX: jitter.dx * size },
+      { translateY: jitter.dy * size },
+      { rotate: `${jitter.rotate}deg` },
+    ],
+  };
+}
 
 /**
  * Dice-related controls on the felt, placed on the half of whoever must
@@ -37,6 +57,24 @@ export function BoardDice({ layout }: { layout: BoardLayout }) {
   const endTurn = useSetAtom(endTurnAtom);
   const acceptDouble = useSetAtom(acceptDoubleAtom);
   const declineDouble = useSetAtom(declineDoubleAtom);
+
+  // Fresh tilt/nudge per die, held stable for the whole turn: the multiset of
+  // values plus whose turn it is only changes on the next roll.
+  const rollKey = `${game.turn}:${game.dice
+    .map((d) => d.value)
+    .slice()
+    .sort()
+    .join(",")}`;
+  const jitter = useMemo<DieJitter[]>(
+    () =>
+      game.dice.map(() => ({
+        rotate: (Math.random() * 2 - 1) * MAX_DIE_ROTATION,
+        dx: (Math.random() * 2 - 1) * MAX_DIE_SHIFT,
+        dy: (Math.random() * 2 - 1) * MAX_DIE_SHIFT,
+      })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [rollKey],
+  );
 
   if (game.phase === "gameOver") return null;
 
@@ -99,7 +137,7 @@ export function BoardDice({ layout }: { layout: BoardLayout }) {
     const lo = Math.min(...values);
     return (
       <>
-        {(["white", "black"] as const).map((player) => {
+        {(["white", "black"] as const).map((player, idx) => {
           const value = player === game.turn ? hi : lo;
           return (
             <Pressable
@@ -118,6 +156,7 @@ export function BoardDice({ layout }: { layout: BoardLayout }) {
                 style={[
                   styles.die,
                   !turnDone && value === currentDie && styles.activeDie,
+                  dieJitterStyle(jitter[idx], dieSize),
                 ]}
               >
                 <DieFace value={value} size={dieSize} player={player} />
@@ -155,6 +194,7 @@ export function BoardDice({ layout }: { layout: BoardLayout }) {
             styles.die,
             { marginLeft: i === 0 ? 0 : DIE_GAP },
             i === activeIndex && styles.activeDie,
+            dieJitterStyle(jitter[i], dieSize),
           ]}
         >
           <DieFace
