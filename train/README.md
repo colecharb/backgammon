@@ -3,8 +3,9 @@
 TD-Gammon-style self-play, entirely in TypeScript. The trainer imports the
 same `src/engine/` move generation and the same `src/ai/` network forward
 pass that the app uses, so a position is evaluated identically in training
-and in gameplay. Nothing under `src/` may import from `train/` — that keeps
-the trainer out of the Metro bundle.
+and in gameplay. No app code under `src/` imports from `train/` — that
+keeps the trainer out of the Metro bundle. (Tests under `src/` do import
+it; they run in Node, never in the app.)
 
 ## How it works
 

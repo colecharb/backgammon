@@ -26,11 +26,12 @@ export interface ScheduledAction {
 /**
  * Crude v0 cube thresholds on cubeless equity (the net knows nothing about
  * cube ownership): take a double down to −0.5 (the classic 25% take
- * point), offer one when clearly ahead but not so far that the opponent
- * should drop and gammon value is wasted.
+ * point), offer from just below the opponent's drop boundary at 0.5 — so
+ * some offers are proper takes — up to where the position is so strong
+ * that doubling would waste gammon value.
  */
 export const TAKE_POINT = -0.5;
-export const OFFER_DOUBLE_MIN = 0.55;
+export const OFFER_DOUBLE_MIN = 0.4;
 export const OFFER_DOUBLE_MAX = 0.9;
 
 /** Pre-roll cubeless equity from the on-roll player's view. */

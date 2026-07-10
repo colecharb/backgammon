@@ -1,6 +1,6 @@
 // Self-play TD(λ) trainer. Run with: npm run train -- --games 200000
 // Training-only: nothing under src/ may import from train/.
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parseArgs } from 'node:util';
 import { greedyPipAgent, neuralAgent, randomAgent } from '../src/ai/agents';
@@ -60,8 +60,15 @@ function checkpoint(totalGames: number): void {
     trainedAt: new Date().toISOString(),
   };
   const json = serializeNet(net, meta);
-  writeFileSync(join(outDir, `ckpt-${totalGames}.json`), json);
-  writeFileSync(join(outDir, 'latest.json'), json);
+  // Write-then-rename so an interrupt can't leave a truncated checkpoint
+  // behind (latest.json is the documented --resume target).
+  const atomicWrite = (name: string) => {
+    const path = join(outDir, name);
+    writeFileSync(`${path}.tmp`, json);
+    renameSync(`${path}.tmp`, path);
+  };
+  atomicWrite(`ckpt-${totalGames}.json`);
+  atomicWrite('latest.json');
 }
 
 function evaluate(totalGames: number): void {
