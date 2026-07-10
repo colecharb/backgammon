@@ -26,7 +26,7 @@ it; they run in Node, never in the app.)
 ## Commands
 
 ```sh
-# The real run (MacBook Air M5: a few hours; games get faster as it learns)
+# The real run (uses worker threads by default; ~1–1.5 h on a MacBook Air M5)
 npm run train -- --games 200000 --seed 42
 
 # Resume after an interruption (game counter is cumulative)
@@ -44,6 +44,36 @@ random and greedy-pip baselines.
 Useful flags: `--hidden 80` (faster, slightly weaker), `--lambda 0`
 (plain one-step TD — the first thing to try if learning ever misbehaves),
 `--alpha`, `--eval-every`, `--checkpoint-every`, `--log-every`.
+
+## Parallelism (multiple cores)
+
+Training runs on worker threads by default (2 of them). `--games` counts
+**sequential-equivalent** games, so a net trained to a given `--games` has
+the same strength no matter how many workers you use — more workers only
+change wall-clock, never the result. `--workers 1` is the fully
+sequential, bit-reproducible path.
+
+How it works: each round, every worker plays one self-play game from the
+identical current weights, and the trainer applies the mean of their
+weight deltas (times `--step-boost`, default 2). One round advances
+learning by `step-boost` sequential-equivalent games.
+
+**Why only ~2× — and why the GPU wouldn't help.** The net is tiny (~26k
+weights); a single evaluation is faster on a CPU core (~10–20µs) than a GPU
+kernel launch, and self-play is sequential (you need this move's value
+before the next position exists), so there's no large batch to feed a GPU.
+On CPU, the limit is the *learning step*, not raw throughput: TD self-play
+bootstraps its own targets, so a round can only take ~2 single-game steps
+before it destabilizes (`--step-boost 3` is erratic, `4` diverges), and a
+bigger minibatch barely lifts that ceiling. Wall-clock ≈
+`games / (step-boost × per-core-rate)`, so the speedup comes from the step
+boost (~2), and ~2 cores are enough to sustain it. Extra workers just
+replay more games for the same net. This is inherent to online TD learning,
+not a limitation of the implementation.
+
+Bottom line: the default (2 workers) gives ~2× over sequential on any
+machine with 2+ real cores and is the recommended setting. `--workers` and
+`--step-boost` are exposed if you want to experiment past that.
 
 ## Shipping new weights
 
