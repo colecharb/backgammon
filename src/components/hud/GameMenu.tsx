@@ -1,7 +1,7 @@
-import { useSetAtom } from "jotai";
+import { useAtom, useSetAtom } from "jotai";
 import React, { useState } from "react";
 import { Alert, Modal, Pressable, StyleSheet, Text, View } from "react-native";
-import { newGameAtom } from "../../state/game";
+import { newGameAtom, playersAtom } from "../../state/game";
 import { HudButton } from "./HudButton";
 
 /**
@@ -11,6 +11,14 @@ import { HudButton } from "./HudButton";
 export function GameMenu() {
   const [open, setOpen] = useState(false);
   const reset = useSetAtom(newGameAtom);
+  const [players, setPlayers] = useAtom(playersAtom);
+
+  // The computer plays black; toggling mid-game just starts/stops it.
+  const toggleOpponent = () =>
+    setPlayers((p) => ({
+      ...p,
+      black: p.black === "computer" ? "human" : "computer",
+    }));
 
   const confirmReset = () => {
     Alert.alert("Reset game?", "The current game will be lost.", [
@@ -41,6 +49,10 @@ export function GameMenu() {
           {/* Swallow taps inside the card so they don't close the menu. */}
           <Pressable style={styles.card} onPress={() => {}}>
             <Text style={styles.title}>Menu</Text>
+            <HudButton
+              label={`Opponent: ${players.black === "computer" ? "Computer" : "Human"}`}
+              onPress={toggleOpponent}
+            />
             <HudButton label="Reset game" onPress={confirmReset} />
             <Pressable onPress={() => setOpen(false)} hitSlop={8}>
               <Text style={styles.close}>Close</Text>

@@ -5,6 +5,7 @@ import { Board } from "../components/board/Board";
 import { GameHeader } from "../components/hud/GameHeader";
 import { GameMenu } from "../components/hud/GameMenu";
 import { Hud } from "../components/hud/Hud";
+import { useComputerPlayer } from "../hooks/useComputerPlayer";
 
 /**
  * Adapts to orientation: landscape puts the panels beside the board and
@@ -12,6 +13,7 @@ import { Hud } from "../components/hud/Hud";
  * portrait stacks them and does the reverse.
  */
 export function GameScreen() {
+  useComputerPlayer();
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const landscape = width > height;
