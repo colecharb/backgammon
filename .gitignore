@@ -36,6 +36,9 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
+# training checkpoints (shipped weights live in src/ai/weights/)
+train/checkpoints/
+
 # generated native folders
 /ios
 /android

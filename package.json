@@ -13,7 +13,9 @@
     "react-native-svg": "15.15.4"
   },
   "devDependencies": {
+    "@types/node": "^26.1.1",
     "@types/react": "~19.2.2",
+    "tsx": "^4.23.0",
     "typescript": "~6.0.3",
     "vitest": "^4.1.9"
   },
@@ -22,7 +24,9 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "test": "vitest run"
+    "test": "vitest run",
+    "train": "tsx train/td-train.ts",
+    "benchmark": "tsx train/benchmark.ts"
   },
   "private": true
 }
