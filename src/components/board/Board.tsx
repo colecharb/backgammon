@@ -1,12 +1,12 @@
 import { useAtomValue, useSetAtom } from 'jotai';
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Svg, { Polygon, Rect as SvgRect } from 'react-native-svg';
-import { CheckerLocation, Player } from '../../engine/types';
 import { gameStateAtom, rollAtom } from '../../state/game';
 import { BoardCube } from './BoardCube';
 import { BoardDice } from './BoardDice';
 import { Checker } from './Checker';
+import { placeCheckers, PlacementMemory } from './checkerPlacement';
 import { BoardLayout, checkerCenter, computeLayout } from './geometry';
 import { LocationPressable } from './LocationPressable';
 import { boardTheme } from './theme';
@@ -32,41 +32,33 @@ function BoardInner({ layout }: { layout: BoardLayout }) {
   const game = useAtomValue(gameStateAtom);
   const roll = useSetAtom(rollAtom);
 
-  interface RenderedChecker {
-    key: string;
-    location: CheckerLocation;
-    player: Player;
-    stackIndex: number;
-    stackCount: number;
-  }
-  const checkers: RenderedChecker[] = [];
-  const pushStack = (location: CheckerLocation, player: Player, count: number) => {
-    for (let i = 0; i < count; i++) {
-      checkers.push({
-        key: `${location}-${player}-${i}`,
-        location,
-        player,
-        stackIndex: i,
-        stackCount: count,
-      });
-    }
-  };
-  game.board.points.forEach((point, i) => {
-    if (point) pushStack(i + 1, point.player, point.count);
-  });
-  for (const player of ['white', 'black'] as const) {
-    pushStack('bar', player, game.board.bar[player]);
-    pushStack('off', player, game.board.off[player]);
-  }
+  // Keep each checker's identity stable across board changes so the one that
+  // moved animates from its old point to its new one instead of teleporting.
+  const memory = useRef<PlacementMemory>(new Map());
+  const { placements, next } = useMemo(
+    () => placeCheckers(game.board, memory.current),
+    [game],
+  );
+  useEffect(() => {
+    memory.current = next;
+  }, [next]);
+
+  // Tie each checker's identity to the board size as well as its id. A resize
+  // (an orientation change, say) then remounts the checkers so each one
+  // re-initialises its animated position from the new geometry, instead of
+  // trying to snap a native-driven transform that would otherwise keep its
+  // stale, pre-resize coordinates. Within a fixed size the key is constant,
+  // so moves still glide.
+  const sizeKey = `${Math.round(layout.width)}x${Math.round(layout.height)}`;
 
   return (
     <View style={StyleSheet.absoluteFill}>
       <BoardBackground layout={layout} />
-      {checkers.map(({ key, location, player, stackIndex, stackCount }) => {
+      {placements.map(({ id, location, player, stackIndex, stackCount }) => {
         const { x, y } = checkerCenter(layout, location, player, stackIndex, stackCount);
         return (
           <Checker
-            key={key}
+            key={`${id}@${sizeKey}`}
             cx={x}
             cy={y}
             radius={layout.checkerRadius}
