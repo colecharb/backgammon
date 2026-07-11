@@ -6,7 +6,6 @@ import { GameHeader } from "../components/hud/GameHeader";
 import { GameMenu } from "../components/hud/GameMenu";
 import { Hud } from "../components/hud/Hud";
 import { useComputerPlayer } from "../hooks/useComputerPlayer";
-import { useGameSounds } from "../hooks/useGameSounds";
 
 /**
  * Adapts to orientation: landscape puts the panels beside the board and
@@ -15,7 +14,6 @@ import { useGameSounds } from "../hooks/useGameSounds";
  */
 export function GameScreen() {
   useComputerPlayer();
-  useGameSounds();
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const landscape = width > height;
