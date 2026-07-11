@@ -8,6 +8,8 @@ so training and the app evaluate positions identically.
 
 from __future__ import annotations
 
+import time
+
 import torch
 
 from .encoding import encode
@@ -15,7 +17,11 @@ from .engine import CHECKERS, DEFAULT_CAP, OFF_B, OFF_W
 from .evaluate import choose_afterstates, flip_outputs
 from .td import lambda_return_targets, terminal_white_outcome
 
-MAX_PLIES = 400  # safety cap; real games finish in well under 100
+# Horizon for one batch of games. An untrained net plays long, meandering games,
+# so a low horizon bounds early-iteration wall-clock; games that don't finish by
+# then are excluded from the loss (see Trainer.train_step). A trained net
+# finishes well under 100 plies, so this rarely bites once learning is underway.
+MAX_PLIES = 200
 
 
 def initial_board(device="cpu") -> torch.Tensor:
@@ -63,19 +69,27 @@ def roll_opening(B, device, gen):
     return players, dice
 
 
-def play_batch(net, B, device, gen, cap=640):
+def play_batch(net, B, device, gen, cap=DEFAULT_CAP, max_plies=MAX_PLIES, heartbeat=0):
     """Play B games to completion; return recorded trajectory tensors and the
     terminal boards. ``boards`` (T,B,28), ``players`` (T,B), ``alive`` (T,B),
-    ``final`` (B,28)."""
+    ``final`` (B,28), ``done`` (B,). ``heartbeat`` > 0 prints an alive-count
+    line every that-many plies so a long first iteration isn't a black box."""
     board = initial_board(device).unsqueeze(0).repeat(B, 1)
     players, dice = roll_opening(B, device, gen)
     done = torch.zeros(B, dtype=torch.bool, device=device)
     final = board.clone()
+    t0 = time.time()
 
     tb, tp, ta = [], [], []
-    for _ in range(MAX_PLIES):
+    for ply in range(max_plies):
         alive = ~done
-        if not alive.any():
+        n_alive = int(alive.sum().item())
+        if heartbeat and ply % heartbeat == 0:
+            print(
+                f"    ply {ply}: {n_alive}/{B} games still going ({time.time() - t0:.0f}s)",
+                flush=True,
+            )
+        if n_alive == 0:
             break
         tb.append(board.clone())
         tp.append(players.clone())
@@ -103,9 +117,9 @@ class Trainer:
         self.device = device
         self.opt = torch.optim.SGD(net.parameters(), lr=lr)
 
-    def train_step(self, B, gen, cap=DEFAULT_CAP):
+    def train_step(self, B, gen, cap=DEFAULT_CAP, max_plies=MAX_PLIES, heartbeat=0):
         boards, players, alive, final, done = play_batch(
-            self.net, B, self.device, gen, cap=cap
+            self.net, B, self.device, gen, cap=cap, max_plies=max_plies, heartbeat=heartbeat
         )
         T = boards.shape[0]
 
