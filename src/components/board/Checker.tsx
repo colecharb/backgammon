@@ -22,7 +22,9 @@ const MOVE_MS = 260;
  * hands it a new center — because its stack moved, or it is the checker that
  * was just played — it eases from where it was to where it belongs instead
  * of teleporting. The Board keeps each checker's identity stable across
- * moves (see Board.tsx) so this animation actually tracks a piece.
+ * moves (see Board.tsx) so this animation actually tracks a piece, and
+ * remounts them on a resize so the position always starts from the current
+ * board geometry.
  */
 export function Checker({ cx, cy, radius, player, selected }: Props) {
   const colors = boardTheme.checker[player];
@@ -30,15 +32,13 @@ export function Checker({ cx, cy, radius, player, selected }: Props) {
   const targetX = cx - radius;
   const targetY = cy - radius;
 
+  // Initialised to the mount-time target, so a freshly mounted checker sits
+  // exactly on its board-relative spot with no animation.
   const pos = useRef(new Animated.ValueXY({ x: targetX, y: targetY })).current;
-  const prev = useRef({ x: targetX, y: targetY, radius });
+  const prev = useRef({ x: targetX, y: targetY });
 
   useEffect(() => {
-    // A radius change means the board itself was resized; snap rather than
-    // slide every checker across the new geometry.
-    if (prev.current.radius !== radius) {
-      pos.setValue({ x: targetX, y: targetY });
-    } else if (prev.current.x !== targetX || prev.current.y !== targetY) {
+    if (prev.current.x !== targetX || prev.current.y !== targetY) {
       Animated.timing(pos, {
         toValue: { x: targetX, y: targetY },
         duration: MOVE_MS,
@@ -46,8 +46,8 @@ export function Checker({ cx, cy, radius, player, selected }: Props) {
         useNativeDriver: true,
       }).start();
     }
-    prev.current = { x: targetX, y: targetY, radius };
-  }, [targetX, targetY, radius, pos]);
+    prev.current = { x: targetX, y: targetY };
+  }, [targetX, targetY, pos]);
 
   return (
     <Animated.View

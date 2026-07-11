@@ -43,6 +43,14 @@ function BoardInner({ layout }: { layout: BoardLayout }) {
     memory.current = next;
   }, [next]);
 
+  // Tie each checker's identity to the board size as well as its id. A resize
+  // (an orientation change, say) then remounts the checkers so each one
+  // re-initialises its animated position from the new geometry, instead of
+  // trying to snap a native-driven transform that would otherwise keep its
+  // stale, pre-resize coordinates. Within a fixed size the key is constant,
+  // so moves still glide.
+  const sizeKey = `${Math.round(layout.width)}x${Math.round(layout.height)}`;
+
   return (
     <View style={StyleSheet.absoluteFill}>
       <BoardBackground layout={layout} />
@@ -50,7 +58,7 @@ function BoardInner({ layout }: { layout: BoardLayout }) {
         const { x, y } = checkerCenter(layout, location, player, stackIndex, stackCount);
         return (
           <Checker
-            key={id}
+            key={`${id}@${sizeKey}`}
             cx={x}
             cy={y}
             radius={layout.checkerRadius}
