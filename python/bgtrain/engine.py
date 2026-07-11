@@ -23,6 +23,12 @@ POINTS = 24
 BAR_W, BAR_B, OFF_W, OFF_B = 24, 25, 26, 27
 CHECKERS = 15
 
+# Upper bound on distinct afterstates per turn. Compaction is always to the
+# actual count, so a high ceiling costs nothing on normal positions; it only
+# needs to exceed the true maximum (extreme bear-in doubles reach ~1700
+# distinct plays) so enumeration never truncates in real play.
+DEFAULT_CAP = 4096
+
 def _expand_one(boards: torch.Tensor, players: torch.Tensor, die: int):
     """Every single-die placement of ``die`` from ``boards``.
 
@@ -113,16 +119,25 @@ def _expand_one(boards: torch.Tensor, players: torch.Tensor, die: int):
 # truncated (only in non-strict mode). Stays 0 for well-sized caps.
 _TRUNCATIONS = 0
 
+# FNV-style prime for a 64-bit polynomial (Horner) hash of a (row, board)
+# vector. A polynomial hash — not a linear dot product — is essential: a linear
+# hash collides systematically because moving a checker A->B shifts it by a
+# fixed w[B]-w[A] that coincides across different moves. int64 arithmetic wraps
+# on overflow (fine for hashing); collision of two *different* rows is ~M²/2⁶⁴
+# per call, negligible and zero across the whole cross-validation set.
+_HASH_PRIME = 1099511628211
+
 
 def _dedup_compact(pool: torch.Tensor, valid: torch.Tensor, cap: int, strict: bool = False):
     """Keep one copy of each distinct valid board per row, compacted into the
     first ``cap`` slots.
 
-    Dedup is exact — ``torch.unique`` over ``(row, board)`` rows, no hashing —
-    so distinct boards can never be collapsed. If a row has more than ``cap``
-    distinct boards, ``strict`` raises (used in cross-validation, where the cap
-    is proven sufficient); otherwise the extras are dropped and a global
-    truncation counter is bumped (a safe backstop for rare extreme doubles)."""
+    Dedup uses a 64-bit hash of ``(row, board)`` sorted with ``argsort`` (all
+    MPS-supported ops — ``torch.unique(dim=0)`` is not implemented on the Metal
+    backend), so it runs on the GPU. If a row has more than ``cap`` distinct
+    boards, ``strict`` raises (used in cross-validation, where the cap is proven
+    sufficient); otherwise the extras are dropped and a global truncation
+    counter is bumped (a backstop for rare extreme bear-in doubles)."""
     global _TRUNCATIONS
     G, K, _ = pool.shape
     device = pool.device
@@ -131,21 +146,26 @@ def _dedup_compact(pool: torch.Tensor, valid: torch.Tensor, cap: int, strict: bo
     valid_flat = valid.reshape(M)
     gidx = torch.arange(G, device=device).view(G, 1).expand(G, K).reshape(M, 1)
     # Invalid slots get a sentinel body so they never merge with a real board
-    # (real counts are never -99); duplicates among them are dropped anyway.
+    # (real counts are never -99) and never precede a valid one as "first".
     sentinel = torch.full((M, 28), -99, dtype=pool.dtype, device=device)
     body = torch.where(valid_flat.view(M, 1), pool_flat, sentinel)
-    feat = torch.cat([gidx, body], dim=1)  # (M, 29)
+    feat = torch.cat([gidx, body + 100], dim=1)  # (M, 29); shift cells non-negative
 
-    _, inv = torch.unique(feat, dim=0, return_inverse=True)
-    order = torch.arange(M, device=device)
-    first = torch.full((int(inv.max().item()) + 1,), M, device=device, dtype=torch.long)
-    first = first.scatter_reduce(0, inv, order, reduce="amin", include_self=True)
-    is_first = order == first[inv]
+    # Polynomial (Horner) hash over the 29 cells — strong, unlike a linear one.
+    key = torch.zeros(M, dtype=torch.int64, device=device)
+    for c in range(feat.shape[1]):
+        key = key * _HASH_PRIME + feat[:, c]
+    order = torch.argsort(key)
+    ks = key[order]
+    is_first_sorted = torch.ones_like(ks, dtype=torch.bool)
+    is_first_sorted[1:] = ks[1:] != ks[:-1]
+    is_first = torch.zeros(M, dtype=torch.bool, device=device)
+    is_first[order] = is_first_sorted
     keeper = (valid_flat & is_first).view(G, K)
 
-    # Move keepers to the front of each row (stable), then slice to the actual
-    # number of distinct boards (NOT the full cap) so the pool stays tight and
-    # the next branch doesn't blow up by a factor of 25 per padded slot.
+    # Move keepers to the front of each row, then slice to the actual number of
+    # distinct boards (NOT the full cap) so the pool stays tight and the next
+    # branch doesn't blow up by a factor of 25 per padded slot.
     sort_key = (~keeper).to(torch.int8)
     perm = torch.argsort(sort_key, dim=1, stable=True)  # (G,K) keepers first
     pool_s = torch.gather(pool, 1, perm.unsqueeze(2).expand(G, K, 28))
@@ -192,7 +212,7 @@ def _reach(board, players, dice_seq, cap, strict=False):
     return out
 
 
-def enumerate_turns(boards, players, dice, cap: int = 640, strict: bool = False):
+def enumerate_turns(boards, players, dice, cap: int = DEFAULT_CAP, strict: bool = False):
     """All distinct legal full-turn afterstates, matching enumerateTurnOutcomes.
 
     ``boards`` (N,28), ``players`` (N,) sign, ``dice`` (N,4) with values and 0

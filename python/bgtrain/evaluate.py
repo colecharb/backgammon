@@ -8,7 +8,7 @@ from __future__ import annotations
 import torch
 
 from .encoding import encode
-from .engine import CHECKERS, OFF_B, OFF_W, enumerate_turns
+from .engine import CHECKERS, DEFAULT_CAP, OFF_B, OFF_W, enumerate_turns
 
 # Win-kind point multipliers, indexed by kind code (1 single, 2 gammon, 3 bg).
 WIN_MULT = torch.tensor([0.0, 1.0, 2.0, 3.0])
@@ -54,7 +54,7 @@ def evaluate_afterstates(net, after, mover, valid):
     return eq.masked_fill(~valid, float("-inf"))
 
 
-def choose_afterstates(net, boards, players, dice, cap: int = 640, greedy: bool = True):
+def choose_afterstates(net, boards, players, dice, cap: int = DEFAULT_CAP, greedy: bool = True):
     """Pick each game's best full-turn afterstate.
 
     Returns ``next_boards`` (N,28) and ``moved`` (N,) — False where the game
@@ -69,12 +69,17 @@ def choose_afterstates(net, boards, players, dice, cap: int = 640, greedy: bool 
 
     with torch.no_grad():
         eq = evaluate_afterstates(net, after, players, valid)
+    moved = valid.any(dim=1)
     if greedy:
         choice = eq.argmax(dim=1)
     else:
-        choice = torch.multinomial(torch.softmax(eq, dim=1).nan_to_num(), 1).squeeze(1)
+        # A dancing row (no valid slot) is all -inf; softmax would be all-NaN and
+        # multinomial would reject it. Give such rows a dummy mass on slot 0 —
+        # their choice is discarded by `moved` anyway.
+        eq_safe = eq.clone()
+        eq_safe[~moved, 0] = 0.0
+        choice = torch.multinomial(torch.softmax(eq_safe, dim=1), 1).squeeze(1)
 
-    moved = valid.any(dim=1)
     idx = choice.view(-1, 1, 1).expand(-1, 1, 28)
     chosen = after.gather(1, idx).squeeze(1)
     next_boards = torch.where(moved.view(-1, 1), chosen, boards)

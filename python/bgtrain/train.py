@@ -58,11 +58,16 @@ def main():
         print("MPS unavailable; falling back to cpu")
         device = "cpu"
 
+    games_before = 0
     if args.resume:
+        import json as _json
+
         from .net import load_net
 
         net = load_net(args.resume, device=device)
-        print(f"Resumed {args.resume} (hidden={net.hidden})")
+        with open(args.resume) as f:
+            games_before = _json.load(f)["meta"].get("games", 0)
+        print(f"Resumed {args.resume} (hidden={net.hidden}, {games_before} games)")
     else:
         net = ValueNet(args.hidden).to(device)
         print(f"Fresh net hidden={args.hidden} lr={args.lr} lam={args.lam} device={device}")
@@ -74,23 +79,28 @@ def main():
 
     os.makedirs(os.path.dirname(args.out) or ".", exist_ok=True)
 
+    from .engine import truncations
+
     t0 = time.time()
-    games_done = 0
+    games_done = 0  # this run
     for it in range(1, args.iters + 1):
         stats = trainer.train_step(args.batch, gen, cap=args.cap)
         games_done += stats["games"]
+        total = games_before + games_done
         if it % args.log_every == 0:
             gps = games_done / (time.time() - t0)
+            trunc = truncations()
             print(
-                f"iter {it}/{args.iters} | {games_done} games | {gps:.0f} games/s | "
+                f"iter {it}/{args.iters} | {total} games | {gps:.0f} games/s | "
                 f"loss {stats['loss']:.4f} | plies {stats['plies']}"
+                + (f" | TRUNCATED {trunc}" if trunc else "")
             )
         if it % args.eval_every == 0 or it == args.iters:
             net.eval()
             evaluate(net, device, args.seed + it)
             net.train()
-            save_net(net, args.out, games_done)
-    print(f"Done. Weights: {args.out} ({games_done} games)")
+            save_net(net, args.out, games_before + games_done)
+    print(f"Done. Weights: {args.out} ({games_before + games_done} games)")
 
 
 if __name__ == "__main__":

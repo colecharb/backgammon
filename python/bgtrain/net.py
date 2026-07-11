@@ -84,5 +84,11 @@ def load_net(path: str, device="cpu") -> ValueNet:
 
 
 def save_net(net: ValueNet, path: str, games: int) -> None:
-    with open(path, "w") as f:
+    # Write-then-rename so an interrupted save can't corrupt the file (which is
+    # also the --resume source). os.replace is atomic on the same filesystem.
+    import os
+
+    tmp = f"{path}.tmp"
+    with open(tmp, "w") as f:
         json.dump(net.to_json(games), f)
+    os.replace(tmp, path)

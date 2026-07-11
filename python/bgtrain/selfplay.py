@@ -11,7 +11,7 @@ from __future__ import annotations
 import torch
 
 from .encoding import encode
-from .engine import CHECKERS, OFF_B, OFF_W
+from .engine import CHECKERS, DEFAULT_CAP, OFF_B, OFF_W
 from .evaluate import choose_afterstates, flip_outputs
 from .td import lambda_return_targets, terminal_white_outcome
 
@@ -93,7 +93,7 @@ def play_batch(net, B, device, gen, cap=640):
         dice = roll_turn(B, device, gen)
 
     boards = torch.stack(tb)  # (T,B,28)
-    return boards, torch.stack(tp), torch.stack(ta), final
+    return boards, torch.stack(tp), torch.stack(ta), final, done
 
 
 class Trainer:
@@ -103,9 +103,16 @@ class Trainer:
         self.device = device
         self.opt = torch.optim.SGD(net.parameters(), lr=lr)
 
-    def train_step(self, B, gen, cap=640):
-        boards, players, alive, final = play_batch(self.net, B, self.device, gen, cap=cap)
+    def train_step(self, B, gen, cap=DEFAULT_CAP):
+        boards, players, alive, final, done = play_batch(
+            self.net, B, self.device, gen, cap=cap
+        )
         T = boards.shape[0]
+
+        # Drop games that never reached a terminal (hit MAX_PLIES): their
+        # terminal outcome is undefined (all-zeros) and would train the net
+        # toward a false target.
+        alive = alive & done.view(1, B)
 
         flat = boards.reshape(T * B, 28)
         pflat = players.reshape(T * B)
@@ -126,6 +133,9 @@ class Trainer:
         loss.backward()
         self.opt.step()
 
-        games = B
-        halfmoves = alive.sum().item()
-        return {"loss": loss.item(), "games": games, "plies": T, "halfmoves": halfmoves}
+        return {
+            "loss": loss.item(),
+            "games": int(done.sum().item()),
+            "plies": T,
+            "unfinished": int((~done).sum().item()),
+        }
