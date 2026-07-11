@@ -1,0 +1,22 @@
+[project]
+name = "bgtrain"
+version = "0.1.0"
+description = "Vectorized GPU self-play trainer for the backgammon engine"
+requires-python = ">=3.11"
+dependencies = [
+    "numpy>=2.0",
+    "torch>=2.4",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.uv]
+# CPU-only torch here (this box has no Apple GPU); on the M5, plain
+# `uv sync` pulls the native wheel with MPS support.

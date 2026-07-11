@@ -1,0 +1,11 @@
+# uv / venv
+.venv/
+uv.lock
+# python caches
+__pycache__/
+*.pyc
+.pytest_cache/
+# generated cross-validation fixtures (regenerate via train/export-fixtures.ts)
+tests/fixtures/*.json
+# training output
+checkpoints/
