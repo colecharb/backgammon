@@ -15,7 +15,7 @@ interface Props {
 const RING_SCALE = 0.62;
 
 /** How long a checker takes to glide from its old spot to its new one. */
-const MOVE_MS = 260;
+const MOVE_MS = 150;
 
 /**
  * A single checker. It owns an animated position so that when the board
