@@ -1,14 +1,23 @@
-# Fast GPU trainer (Python / PyTorch)
+# Vectorized self-play trainer (Python / PyTorch) — a validated experiment
 
-A vectorized, batched self-play trainer that reaches minutes-scale on the
-MacBook Air M5 by advancing **thousands of games in lockstep** so each ply is
-one large matmul on the GPU (MPS). It trains the *same* value network the app
-plays with and exports weights in the app's exact JSON format.
+A batched self-play trainer that advances many games in lockstep, trains the
+*same* value network the app plays with, and exports weights in the app's exact
+JSON format. It contains a **second**, batched backgammon engine (the TS engine
+can't run games as array ops), so correctness rests on cross-validation against
+the (tested) TS engine — those checks are the point of the test suite.
 
-It contains a **second** backgammon engine — a batched one, since the
-TypeScript engine can't run games as array ops — so correctness rests on
-cross-validation against the (tested) TS engine. Those checks are the point of
-the test suite, not an afterthought.
+> **Performance finding — read this first.** The goal was minutes-scale
+> training by keeping a GPU busy. It did not pan out, and the numbers say why:
+> throughput is **~15 games/s and flat across batch size** (per-ply cost scales
+> *linearly* with batch), i.e. **on par with the single-threaded TS trainer**
+> (`train/` on `feat/engine-v0`). The reason: the cost is backgammon *move
+> enumeration* (sorts/scatter over hundreds of afterstates per game), not the
+> tiny net — GPUs don't accelerate that, and batching doesn't amortize it. On
+> Metal (MPS) it is *slower* than CPU (~1.0 vs ~0.15 s/ply) because each of the
+> many tiny ops pays a kernel-launch latency. **Recommendation: use the TS
+> trainer.** This branch stands as a correct, fully cross-validated engine and
+> a clean answer to "does GPU/vectorization help here" (no). If you run it, use
+> `--device cpu`.
 
 ## Setup
 
@@ -75,15 +84,18 @@ uv run pytest -q                                  # all cross-validation + math
 npx tsx train/export-fixtures.ts                  # regenerate fixtures from the TS engine
 ```
 
-## Why this is the fast path — and its limits
+## Why batching didn't win here
 
-The net is tiny; the win is **vectorization**, not the GPU alone — batching
-thousands of games amortizes Python overhead and turns per-turn move
-enumeration into large tensor ops. On the M5's GPU (MPS) those ops run in
-parallel; on a CPU (as in CI here) the same code is correct but far slower, so
-the numbers to trust from this environment are the *cross-validation* results,
-not wall-clock. The engine is designed for the GPU: `torch.unique`/`scatter`
-enumeration is heavy on a CPU and light on MPS.
+The idea was that batching many games would amortize per-game overhead and let
+a GPU do the heavy lifting. Measurement disproved it: per-ply time scales
+*linearly* with batch size (≈0.11 s at B=64 → ≈4.9 s at B=4096 on this CPU), so
+games/s is flat at ~15 regardless of batch. The dominant cost is move
+enumeration — deduped sorts and scatters over the hundreds of distinct
+afterstates each turn can have — and that work is per-game; batching just does
+the same total work in bigger tensors. The neural net, the one thing a GPU
+accelerates well, is a rounding error next to it. So there is no batching
+speedup to capture, and Metal's per-kernel launch latency over the many small
+ops makes MPS slower than CPU.
 
 Move selection is greedy 1-ply over all distinct full-turn afterstates
 (exact-match with the app); exploration comes from the dice. Training is
