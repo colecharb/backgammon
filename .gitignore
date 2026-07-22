@@ -42,3 +42,4 @@ train/checkpoints/
 # generated native folders
 /ios
 /android
+dist
