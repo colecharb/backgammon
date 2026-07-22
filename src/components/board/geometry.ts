@@ -42,6 +42,15 @@ const COLUMNS = 14; // 12 points + bar + off tray
 /** A stack's maximum visual height, in checker diameters. */
 const MAX_STACK_DIAMETERS = 5;
 
+/**
+ * The doubling cube's side length for a board of the given pixel width — a
+ * fraction of a point's width, so every cube (on the board or in the control
+ * area) is the same size for a given board.
+ */
+export function cubeSize(width: number): number {
+  return (width / (COLUMNS + 0.75)) * 0.72;
+}
+
 export function computeLayout(width: number, height: number): BoardLayout {
   // 14 columns plus quarter-width frame strips on each side and one more
   // between the felt and the off tray = 14.75 point widths.

@@ -6,28 +6,33 @@ import {
   gameStateAtom,
   offerDoubleAtom,
 } from "../../state/game";
-import { BoardLayout, cubeSize } from "./geometry";
-import { boardTheme } from "./theme";
+import { boardTheme } from "../board/theme";
 
 /**
- * The doubling cube while it is centered (unowned): it sits on the off-tray
- * column, mid-board. Once a player owns it, it leaves the board for the control
- * area (see DoublingCube), so this renders nothing. Tapping offers a double
- * (undo retracts a fat-thumbed offer); a pending offer shows the proposed value.
+ * The doubling cube once a player owns it, so it has left the centered on-board
+ * spot (see BoardCube). Black's cube rides beside the equity bar above the
+ * board; white's sits in the control row under it. Each spot renders its own
+ * side and nothing otherwise. `size` matches the on-board cube so it stays the
+ * same size everywhere. Tapping offers a double when the human may; a pending
+ * offer is highlighted.
  */
-export function BoardCube({ layout }: { layout: BoardLayout }) {
+export function DoublingCube({
+  at,
+  size,
+}: {
+  at: "bar" | "row";
+  size: number;
+}) {
   const game = useAtomValue(gameStateAtom);
   const canDouble = useAtomValue(canDoubleAtom);
   const offerDouble = useSetAtom(offerDoubleAtom);
 
-  if (game.cube.owner !== null) return null;
+  const owner = game.cube.owner;
+  const show = at === "bar" ? owner === "black" : owner === "white";
+  if (!show) return null;
 
   const pending = game.phase === "doubled";
   const value = pending ? game.cube.value * 2 : game.cube.value;
-
-  const size = cubeSize(layout.width);
-  const trayX = layout.offColumn.x + (layout.offColumn.width - size) / 2;
-  const position = { left: trayX, top: (layout.height - size) / 2 };
 
   return (
     <Pressable
@@ -36,13 +41,9 @@ export function BoardCube({ layout }: { layout: BoardLayout }) {
       hitSlop={10}
       style={[
         styles.cube,
+        { width: size, height: size, borderRadius: size * 0.2 },
         pending && styles.pending,
-        {
-          ...position,
-          width: size,
-          height: size,
-          borderRadius: size * 0.2,
-        },
+        !canDouble && !pending && styles.idle,
       ]}
     >
       <Text style={[styles.value, { fontSize: size * 0.45 }]}>
@@ -54,12 +55,14 @@ export function BoardCube({ layout }: { layout: BoardLayout }) {
 
 const styles = StyleSheet.create({
   cube: {
-    position: "absolute",
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: boardTheme.checker.white.fill,
     borderWidth: 1,
     borderColor: boardTheme.checker.white.stroke,
+  },
+  idle: {
+    opacity: 0.5,
   },
   pending: {
     borderWidth: 2,

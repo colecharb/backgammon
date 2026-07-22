@@ -1,23 +1,15 @@
-import { useAtomValue, useSetAtom } from "jotai";
+import { useAtomValue } from "jotai";
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
-import {
-  canUndoAtom,
-  gameResultAtom,
-  gameStateAtom,
-  undoAtom,
-} from "../../state/game";
 import { GameResult } from "../../engine/types";
+import { gameResultAtom, gameStateAtom } from "../../state/game";
 import { boardTheme } from "../board/theme";
-import { HudButton } from "./HudButton";
 
-/** Status badge/text with undo beneath, stacked for the left side panel.
- * The undo button keeps its space when hidden so nothing shifts. */
+/** Status badge + text (whose turn / what phase). Sits under the board; the
+ * undo control lives beside it in the control row (see UndoButton). */
 export function GameHeader() {
   const game = useAtomValue(gameStateAtom);
-  const canUndo = useAtomValue(canUndoAtom);
   const result = useAtomValue(gameResultAtom);
-  const undo = useSetAtom(undoAtom);
 
   const label = result
     ? resultLabel(result)
@@ -31,17 +23,9 @@ export function GameHeader() {
 
   const badgePlayer = result?.winner ?? game.turn;
   return (
-    <View style={styles.header}>
-      <View style={styles.status}>
-        <TurnBadge player={badgePlayer} />
-        <Text style={styles.label}>{label}</Text>
-      </View>
-      <View
-        style={!canUndo && styles.hidden}
-        pointerEvents={canUndo ? "auto" : "none"}
-      >
-        <HudButton label="Undo" onPress={undo} />
-      </View>
+    <View style={styles.status}>
+      {/*<TurnBadge player={badgePlayer} />*/}
+      <Text style={styles.label}>{label}</Text>
     </View>
   );
 }
@@ -78,10 +62,6 @@ function capitalize(s: string): string {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    alignItems: "center",
-    gap: 16,
-  },
   status: {
     flexDirection: "row",
     alignItems: "center",
@@ -97,8 +77,5 @@ const styles = StyleSheet.create({
     color: "#e8e6e1",
     fontSize: 16,
     fontWeight: "600",
-  },
-  hidden: {
-    opacity: 0,
   },
 });
