@@ -33,7 +33,7 @@ React Native + Expo SDK 57, TypeScript (strict), jotai for state, react-native-s
 - Tap-to-move gated to legal moves, dice swapping, per-move undo, animated checkers, orientation-adaptive layout.
 - Human vs human or vs the engine — the computer acts through the same state atoms as the human, one paced, watchable action at a time.
 - 69 unit tests (vitest) across rules, turn enumeration, the cube, encoding, the TD math, and equity ranking; `tsc --noEmit` is clean.
-- A draft analysis panel that ranks every legal play of the current turn by net equity lives in `src/components/analysis/` (not yet wired into the UI).
+- A live analysis panel (`src/components/analysis/`) ranks every legal play of the current turn by net equity — the same evaluation the computer maximizes — as a bar chart beside the board.
 
 [SCREENSHOT: gameplay GIF — a turn against the computer]
 
