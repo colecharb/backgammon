@@ -9,16 +9,30 @@ import { boardTheme } from "../board/theme";
  * checker colours. The parent makes it pressable to reveal the per-move ranking.
  * Purely derived from positionEquityAtom.
  */
-export function EquityBar() {
+export function EquityBar({ height }: { height: number }) {
   const { pWhiteWin } = useAtomValue(positionEquityAtom);
   const whitePct = Math.round(pWhiteWin * 100);
   const blackPct = 100 - whitePct;
+  const radius = height * 0.28;
+  const pad = height * 0.36;
   return (
-    <View style={styles.bar}>
-      <View style={[styles.segment, styles.white, { flex: Math.max(pWhiteWin, 1e-4) }]}>
+    <View style={[styles.bar, { height, borderRadius: radius }]}>
+      <View
+        style={[
+          styles.segment,
+          styles.white,
+          { paddingLeft: pad, flex: Math.max(pWhiteWin, 1e-4) },
+        ]}
+      >
         {whitePct >= 12 && <Text style={styles.whiteLabel}>{whitePct}%</Text>}
       </View>
-      <View style={[styles.segment, styles.black, { flex: Math.max(1 - pWhiteWin, 1e-4) }]}>
+      <View
+        style={[
+          styles.segment,
+          styles.black,
+          { paddingRight: pad, flex: Math.max(1 - pWhiteWin, 1e-4) },
+        ]}
+      >
         {blackPct >= 12 && <Text style={styles.blackLabel}>{blackPct}%</Text>}
       </View>
     </View>
@@ -29,8 +43,6 @@ const styles = StyleSheet.create({
   bar: {
     flexDirection: "row",
     width: "100%",
-    height: 22,
-    borderRadius: 6,
     overflow: "hidden",
     backgroundColor: "#26262c",
   },
@@ -40,12 +52,10 @@ const styles = StyleSheet.create({
   white: {
     backgroundColor: boardTheme.checker.white.fill,
     alignItems: "flex-start",
-    paddingLeft: 8,
   },
   black: {
     backgroundColor: boardTheme.checker.black.fill,
     alignItems: "flex-end",
-    paddingRight: 8,
   },
   whiteLabel: {
     color: "#3a3a3a",
