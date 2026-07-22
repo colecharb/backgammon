@@ -4,7 +4,6 @@ import { Pressable, StyleSheet, View, ViewStyle } from "react-native";
 import { opponent } from "../../engine/helpers";
 import {
   acceptDoubleAtom,
-  currentDieAtom,
   declineDoubleAtom,
   endTurnAtom,
   gameStateAtom,
@@ -16,7 +15,6 @@ import {
 import { DieFace } from "../hud/DieFace";
 import { HudButton } from "../hud/HudButton";
 import { BoardLayout } from "./geometry";
-import { boardTheme } from "./theme";
 
 const DIE_GAP = 6;
 /** Playful per-die tilt and nudge so a thrown pair never looks stamped-on. */
@@ -52,7 +50,6 @@ export function BoardDice({ layout }: { layout: BoardLayout }) {
   const game = useAtomValue(gameStateAtom);
   const players = useAtomValue(playersAtom);
   const legalMoves = useAtomValue(legalMovesAtom);
-  const currentDie = useAtomValue(currentDieAtom);
   const roll = useSetAtom(rollAtom);
   const swap = useSetAtom(swapDiceAtom);
   const endTurn = useSetAtom(endTurnAtom);
@@ -153,13 +150,7 @@ export function BoardDice({ layout }: { layout: BoardLayout }) {
               onPress={turnDone ? endTurn : swap}
               hitSlop={12}
             >
-              <View
-                style={[
-                  styles.die,
-                  !turnDone && value === currentDie && styles.activeDie,
-                  dieJitterStyle(jitter[idx], dieSize),
-                ]}
-              >
+              <View style={dieJitterStyle(jitter[idx], dieSize)}>
                 <DieFace value={value} size={dieSize} player={player} />
               </View>
             </Pressable>
@@ -171,10 +162,6 @@ export function BoardDice({ layout }: { layout: BoardLayout }) {
 
   const rowWidth =
     game.dice.length * dieSize + (game.dice.length - 1) * DIE_GAP;
-
-  const activeIndex = turnDone
-    ? -1
-    : game.dice.findIndex((d) => !d.used && d.value === currentDie);
 
   return (
     <Pressable
@@ -192,9 +179,7 @@ export function BoardDice({ layout }: { layout: BoardLayout }) {
         <View
           key={i}
           style={[
-            styles.die,
             { marginLeft: i === 0 ? 0 : DIE_GAP },
-            i === activeIndex && styles.activeDie,
             dieJitterStyle(jitter[i], dieSize),
           ]}
         >
@@ -221,13 +206,5 @@ const styles = StyleSheet.create({
   dice: {
     position: "absolute",
     flexDirection: "row",
-  },
-  die: {
-    borderRadius: 9,
-    borderWidth: 2,
-    borderColor: "transparent",
-  },
-  activeDie: {
-    borderColor: boardTheme.selected,
   },
 });
