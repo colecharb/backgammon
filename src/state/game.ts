@@ -22,7 +22,7 @@ export const gameStateAtom = atom<GameState>(initialGameState());
  * answer doubles for it; the computer acts through computerActionAtom
  * (state/ai.ts) instead.
  */
-export const playersAtom = atom<Players>({ white: 'human', black: 'human' });
+export const playersAtom = atom<Players>({ white: 'human', black: 'computer' });
 
 export const legalMovesAtom = atom((get) => getLegalMoves(get(gameStateAtom)));
 
