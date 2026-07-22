@@ -20,8 +20,9 @@ import { boardTheme } from "./theme";
 
 const DIE_GAP = 6;
 /** Playful per-die tilt and nudge so a thrown pair never looks stamped-on. */
-const MAX_DIE_ROTATION = 16; // degrees
-const MAX_DIE_SHIFT = 0.1; // as a fraction of the die size
+const MAX_DIE_ROTATION = 30; // degrees
+const MAX_DIE_SHIFT = 0.1; // vertical nudge, as a fraction of the die size
+const MAX_DIE_SHIFT_X = MAX_DIE_SHIFT * 0.9; // horizontal nudge, 10% smaller
 
 interface DieJitter {
   rotate: number;
@@ -69,7 +70,7 @@ export function BoardDice({ layout }: { layout: BoardLayout }) {
     () =>
       game.dice.map(() => ({
         rotate: (Math.random() * 2 - 1) * MAX_DIE_ROTATION,
-        dx: (Math.random() * 2 - 1) * MAX_DIE_SHIFT,
+        dx: (Math.random() * 2 - 1) * MAX_DIE_SHIFT_X,
         dy: (Math.random() * 2 - 1) * MAX_DIE_SHIFT,
       })),
     // eslint-disable-next-line react-hooks/exhaustive-deps
