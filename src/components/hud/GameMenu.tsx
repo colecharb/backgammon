@@ -1,15 +1,17 @@
 import { useAtom, useSetAtom } from "jotai";
 import React, { useState } from "react";
-import { Alert, Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { Modal, Pressable, StyleSheet, Text } from "react-native";
 import { newGameAtom, playersAtom } from "../../state/game";
 import { HudButton } from "./HudButton";
 
 /**
  * Menu trigger that opens a centered modal overlay. Destructive entries
- * (reset) confirm via an alert before acting.
+ * (reset) confirm in-place before acting — react-native-web's Alert.alert
+ * is a no-op, so a native Alert confirmation would silently never fire.
  */
 export function GameMenu() {
   const [open, setOpen] = useState(false);
+  const [confirmingReset, setConfirmingReset] = useState(false);
   const reset = useSetAtom(newGameAtom);
   const [players, setPlayers] = useAtom(playersAtom);
 
@@ -20,18 +22,9 @@ export function GameMenu() {
       black: p.black === "computer" ? "human" : "computer",
     }));
 
-  const confirmReset = () => {
-    Alert.alert("Reset game?", "The current game will be lost.", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Reset",
-        style: "destructive",
-        onPress: () => {
-          reset();
-          setOpen(false);
-        },
-      },
-    ]);
+  const close = () => {
+    setOpen(false);
+    setConfirmingReset(false);
   };
 
   return (
@@ -43,20 +36,47 @@ export function GameMenu() {
         visible={open}
         transparent
         animationType="fade"
-        onRequestClose={() => setOpen(false)}
+        onRequestClose={close}
       >
-        <Pressable style={styles.backdrop} onPress={() => setOpen(false)}>
+        <Pressable style={styles.backdrop} onPress={close}>
           {/* Swallow taps inside the card so they don't close the menu. */}
           <Pressable style={styles.card} onPress={() => {}}>
-            <Text style={styles.title}>Menu</Text>
-            <HudButton
-              label={`Opponent: ${players.black === "computer" ? "Computer" : "Human"}`}
-              onPress={toggleOpponent}
-            />
-            <HudButton label="Reset game" onPress={confirmReset} />
-            <Pressable onPress={() => setOpen(false)} hitSlop={8}>
-              <Text style={styles.close}>Close</Text>
-            </Pressable>
+            {confirmingReset ? (
+              <>
+                <Text style={styles.title}>Reset game?</Text>
+                <Text style={styles.message}>
+                  The current game will be lost.
+                </Text>
+                <HudButton
+                  label="Reset"
+                  onPress={() => {
+                    reset();
+                    close();
+                  }}
+                />
+                <Pressable
+                  onPress={() => setConfirmingReset(false)}
+                  hitSlop={8}
+                >
+                  <Text style={styles.close}>Cancel</Text>
+                </Pressable>
+              </>
+            ) : (
+              <>
+                <Text style={styles.title}>Menu</Text>
+                <HudButton
+                  label={`Opponent: ${players.black === "computer" ? "Computer" : "Human"}`}
+                  onPress={toggleOpponent}
+                />
+                <HudButton
+                  label="Reset game"
+                  onPress={() => setConfirmingReset(true)}
+                />
+                <Pressable onPress={close} hitSlop={8}>
+                  <Text style={styles.close}>Close</Text>
+                </Pressable>
+              </>
+            )}
           </Pressable>
         </Pressable>
       </Modal>
@@ -93,6 +113,12 @@ const styles = StyleSheet.create({
     color: "#e8e6e1",
     fontSize: 18,
     fontWeight: "700",
+  },
+  message: {
+    color: "#8a877f",
+    fontSize: 14,
+    textAlign: "center",
+    marginTop: -8,
   },
   close: {
     color: "#8a877f",
