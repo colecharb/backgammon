@@ -51,6 +51,23 @@ export function cubeSize(width: number): number {
   return (width / (COLUMNS + 0.75)) * 0.72;
 }
 
+/**
+ * The board frame's thickness for a board of the given pixel width (a quarter
+ * of a point's width). The playable area is inset by this on every side, so it
+ * doubles as the alignment reference for chrome placed beside the board.
+ */
+export function frameThickness(width: number): number {
+  return width / (COLUMNS + 0.75) / 4;
+}
+
+/**
+ * The off-tray column's width for a board of the given pixel width — the
+ * rightmost column, one point wide.
+ */
+export function offTrayWidth(width: number): number {
+  return width / (COLUMNS + 0.75);
+}
+
 export function computeLayout(width: number, height: number): BoardLayout {
   // 14 columns plus quarter-width frame strips on each side and one more
   // between the felt and the off tray = 14.75 point widths.
