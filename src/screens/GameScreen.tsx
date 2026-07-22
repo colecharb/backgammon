@@ -1,6 +1,7 @@
 import React from "react";
 import { StyleSheet, useWindowDimensions, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { EquityPanel } from "../components/analysis/EquityPanel";
 import { Board } from "../components/board/Board";
 import { GameHeader } from "../components/hud/GameHeader";
 import { GameMenu } from "../components/hud/GameMenu";
@@ -32,13 +33,14 @@ export function GameScreen() {
 
   return (
     <View style={[styles.screen, orientationStyle]}>
-      <View style={styles.side}>
+      <View style={[styles.side, landscape && styles.sideLandscape]}>
         <GameHeader />
       </View>
       <View style={landscape ? styles.frameLandscape : styles.framePortrait}>
         <Board />
       </View>
-      <View style={styles.side}>
+      <View style={[styles.side, landscape && styles.sideLandscape]}>
+        <EquityPanel />
         <Hud />
         <GameMenu />
       </View>
@@ -70,5 +72,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 12,
+  },
+  // Reserve enough width beside the board that the analysis panel stays
+  // readable on wide screens; the aspect-locked board shrinks to fit.
+  sideLandscape: {
+    minWidth: 200,
+    paddingHorizontal: 8,
   },
 });

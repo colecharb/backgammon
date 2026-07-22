@@ -14,9 +14,10 @@ function locationLabel(location: CheckerLocation, player: Player): string {
 }
 
 function turnLabel(turn: RankedTurn, player: Player): string {
-  return turn.outcome.moves
-    .map((m) => `${locationLabel(m.from, player)}/${locationLabel(m.to, player)}`)
-    .join(" ");
+  const parts = turn.outcome.moves.map(
+    (m) => `${locationLabel(m.from, player)}/${locationLabel(m.to, player)}`,
+  );
+  return parts.length ? parts.join(" ") : "no play";
 }
 
 function formatEquity(equity: number): string {
@@ -25,8 +26,10 @@ function formatEquity(equity: number): string {
 
 /**
  * The engine's live ranking of every distinct way to play the remaining
- * dice, with cubeless equity per line. Purely derived from rankedTurnsAtom;
- * renders nothing outside the moving phase.
+ * dice, with cubeless equity per line. Each row is a horizontal bar whose
+ * length tracks equity, with the move on top so the label always gets the
+ * full width. Purely derived from rankedTurnsAtom; renders nothing outside
+ * the moving phase.
  */
 export function EquityPanel() {
   const ranked = useAtomValue(rankedTurnsAtom);
@@ -37,9 +40,9 @@ export function EquityPanel() {
   const best = rows[0].equity;
   const worst = rows[rows.length - 1].equity;
   const span = best - worst;
-  // Worst shown row keeps a stub of bar so every line reads as a bar.
+  // Every row keeps a visible stub even when it is the worst shown line.
   const fill = (equity: number) =>
-    span > 0 ? 12 + (88 * (equity - worst)) / span : 100;
+    span > 0 ? 15 + (85 * (equity - worst)) / span : 100;
 
   return (
     <View style={styles.panel}>
@@ -48,18 +51,16 @@ export function EquityPanel() {
       </Text>
       {rows.map((row, i) => (
         <View key={row.outcome.key} style={styles.row}>
+          <View
+            style={[
+              styles.barFill,
+              i === 0 && styles.barFillBest,
+              { width: `${fill(row.equity)}%` },
+            ]}
+          />
           <Text style={styles.moves} numberOfLines={1}>
             {turnLabel(row, game.turn)}
           </Text>
-          <View style={styles.barTrack}>
-            <View
-              style={[
-                styles.bar,
-                i === 0 && styles.barBest,
-                { width: `${fill(row.equity)}%` },
-              ]}
-            />
-          </View>
           <Text style={[styles.equity, i === 0 && styles.equityBest]}>
             {formatEquity(row.equity)}
           </Text>
@@ -74,22 +75,38 @@ export function EquityPanel() {
 
 const styles = StyleSheet.create({
   panel: {
-    width: "90%",
-    maxWidth: 340,
+    width: "100%",
+    maxWidth: 320,
     padding: 10,
     borderRadius: 10,
     backgroundColor: "#26262c",
-    gap: 6,
+    gap: 5,
   },
   title: {
     color: "#9a9aa3",
     fontSize: 12,
     fontWeight: "600",
+    marginBottom: 1,
   },
   row: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    height: 26,
+    paddingHorizontal: 8,
+    borderRadius: 5,
+    overflow: "hidden",
+    backgroundColor: "rgba(255, 255, 255, 0.04)",
+  },
+  barFill: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    bottom: 0,
+    borderRadius: 5,
+    backgroundColor: "rgba(138, 138, 147, 0.28)",
+  },
+  barFillBest: {
+    backgroundColor: "rgba(245, 197, 66, 0.22)",
   },
   moves: {
     flex: 1,
@@ -97,26 +114,11 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontVariant: ["tabular-nums"],
   },
-  barTrack: {
-    flex: 1,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: "rgba(255, 255, 255, 0.08)",
-    overflow: "hidden",
-  },
-  bar: {
-    height: "100%",
-    borderRadius: 3,
-    backgroundColor: "#8a8a93",
-  },
-  barBest: {
-    backgroundColor: "#f5c542",
-  },
   equity: {
-    width: 48,
-    textAlign: "right",
-    color: "#9a9aa3",
+    marginLeft: 8,
+    color: "#c9c9d1",
     fontSize: 13,
+    fontWeight: "600",
     fontVariant: ["tabular-nums"],
   },
   equityBest: {
