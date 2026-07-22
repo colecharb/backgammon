@@ -49,26 +49,30 @@ export function EquityPanel() {
       <Text style={styles.title}>
         Engine · equity if {game.turn} plays…
       </Text>
-      {rows.map((row, i) => (
-        <View key={row.outcome.key} style={styles.row}>
-          <View
-            style={[
-              styles.barFill,
-              i === 0 && styles.barFillBest,
-              { width: `${fill(row.equity)}%` },
-            ]}
-          />
-          <Text style={styles.moves} numberOfLines={1}>
-            {turnLabel(row, game.turn)}
-          </Text>
-          <Text style={[styles.equity, i === 0 && styles.equityBest]}>
-            {formatEquity(row.equity)}
-          </Text>
-        </View>
-      ))}
       {ranked.length > rows.length && (
         <Text style={styles.more}>+{ranked.length - rows.length} more</Text>
       )}
+      {/* Reversed so the best line renders at the bottom, nearest the board. */}
+      {rows
+        .map((row, i) => ({ row, i }))
+        .reverse()
+        .map(({ row, i }) => (
+          <View key={row.outcome.key} style={styles.row}>
+            <View
+              style={[
+                styles.barFill,
+                i === 0 && styles.barFillBest,
+                { width: `${fill(row.equity)}%` },
+              ]}
+            />
+            <Text style={styles.moves} numberOfLines={1}>
+              {turnLabel(row, game.turn)}
+            </Text>
+            <Text style={[styles.equity, i === 0 && styles.equityBest]}>
+              {formatEquity(row.equity)}
+            </Text>
+          </View>
+        ))}
     </View>
   );
 }
