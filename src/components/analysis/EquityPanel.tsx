@@ -1,7 +1,7 @@
 import { useAtomValue } from "jotai";
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { CheckerLocation, Player } from "../../engine/types";
+import { CheckerLocation, GameState, Player } from "../../engine/types";
 import { RankedTurn, rankedTurnsAtom } from "../../state/analysis";
 import { gameStateAtom } from "../../state/game";
 
@@ -24,17 +24,48 @@ function formatEquity(equity: number): string {
   return (equity >= 0 ? "+" : "") + equity.toFixed(2);
 }
 
+function capitalize(s: string): string {
+  return s[0].toUpperCase() + s.slice(1);
+}
+
+/** What to say when there are no moves to rank, so tapping the bar always
+ * reveals something instead of an empty overlay that blinks in and out as the
+ * dice come and go. */
+function emptyMessage(game: GameState): string {
+  switch (game.phase) {
+    case "rolling":
+      return game.history.length === 0
+        ? "Roll for the opening to see the top moves."
+        : `${capitalize(game.turn)} to roll — the top moves appear once the dice are down.`;
+    case "doubled":
+      return `${capitalize(game.turn)} doubled. The top moves return once the cube is answered.`;
+    case "gameOver":
+      return "The game is over — no moves to rank.";
+    default:
+      // Moving phase but nothing to play: a dance.
+      return `No legal move for ${game.turn} — the turn passes.`;
+  }
+}
+
 /**
  * The engine's live ranking of every distinct way to play the remaining
  * dice, with cubeless equity per line. Each row is a horizontal bar whose
  * length tracks equity, with the move on top so the label always gets the
- * full width. Purely derived from rankedTurnsAtom; renders nothing outside
- * the moving phase.
+ * full width. Purely derived from rankedTurnsAtom; when there is nothing to
+ * rank it explains why rather than vanishing, so the panel is stable whether
+ * or not the dice are in play.
  */
 export function EquityPanel() {
   const ranked = useAtomValue(rankedTurnsAtom);
   const game = useAtomValue(gameStateAtom);
-  if (!ranked) return null;
+  if (!ranked) {
+    return (
+      <View style={styles.panel}>
+        <Text style={styles.title}>Engine · top moves</Text>
+        <Text style={styles.empty}>{emptyMessage(game)}</Text>
+      </View>
+    );
+  }
 
   const rows = ranked.slice(0, MAX_ROWS);
   const best = rows[0].equity;
@@ -132,5 +163,10 @@ const styles = StyleSheet.create({
     color: "#6d6d76",
     fontSize: 11,
     textAlign: "right",
+  },
+  empty: {
+    color: "#9a9aa3",
+    fontSize: 13,
+    lineHeight: 18,
   },
 });

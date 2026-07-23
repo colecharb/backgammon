@@ -3,6 +3,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  Text,
   useWindowDimensions,
   View,
 } from "react-native";
@@ -37,6 +38,9 @@ export function GameScreen() {
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const [showMoves, setShowMoves] = useState(false);
+  // One-time hint pointing at the equity bar. Dismissed for the rest of the
+  // session on first tap of the bar or the hint's close — no persistence yet.
+  const [hintDismissed, setHintDismissed] = useState(false);
   // Space above the board group — the ceiling for the move-equity overlay.
   const [topSpace, setTopSpace] = useState(0);
 
@@ -103,10 +107,26 @@ export function GameScreen() {
               </ScrollView>
             </View>
           )}
+          {!hintDismissed && !showMoves && (
+            <View style={styles.hintOverlay}>
+              <Pressable
+                style={styles.hint}
+                onPress={() => setHintDismissed(true)}
+              >
+                <Text style={styles.hintText}>
+                  Tap the bar to see the top moves
+                </Text>
+                <Text style={styles.hintClose}>✕</Text>
+              </Pressable>
+            </View>
+          )}
           <View style={[styles.barRow, {marginLeft: frame}]}>
             <Pressable
               style={styles.barPress}
-              onPress={() => setShowMoves((s) => !s)}
+              onPress={() => {
+                setHintDismissed(true);
+                setShowMoves((s) => !s);
+              }}
             >
               <EquityBar height={barHeight} />
             </Pressable>
@@ -212,5 +232,35 @@ const styles = StyleSheet.create({
   },
   movesContent: {
     alignItems: "center",
+  },
+  // Sits just above the bar, same anchoring as the moves overlay so it never
+  // reflows the board.
+  hintOverlay: {
+    position: "absolute",
+    bottom: "100%",
+    left: 0,
+    right: 0,
+    alignItems: "center",
+    paddingBottom: 8,
+  },
+  hint: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 7,
+    paddingLeft: 12,
+    paddingRight: 10,
+    borderRadius: 8,
+    backgroundColor: "#26262c",
+  },
+  hintText: {
+    color: "#c9c9d1",
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  hintClose: {
+    color: "#6d6d76",
+    fontSize: 13,
+    fontWeight: "700",
   },
 });
