@@ -2,7 +2,8 @@
 
 A complete backgammon game — rules engine, mobile/web app, and a TD-Gammon-style neural net trained by self-play — written from scratch in TypeScript. No game libraries, no ML frameworks.
 
-[SCREENSHOT: board mid-game, landscape]
+<img width="600" alt="IMG_8062" src="https://github.com/user-attachments/assets/13071917-bad6-4f1d-9c1a-c27aba289b90" />
+
 
 ## The AI
 
@@ -22,11 +23,10 @@ The same forward pass evaluates positions in training (Node) and in the app (on-
 | random     | 99.9% ± 0.1%           | +2.62                  |
 | greedy-pip | 99.5% ± 0.2%           | +2.39                  |
 
-Strength against real opposition: [FILL: Cole confirms — e.g. result vs GNU Backgammon, FIBS rating, or an honest "comfortably beats its author"]
 
 ## The app
 
-React Native + Expo SDK 57, TypeScript (strict), jotai for state, react-native-svg for the board. iOS, Android, and web from one codebase.
+React Native + Expo SDK 57, TypeScript (strict), jotai for state, react-native-svg for the board. iOS and web (and theoretically Android) from one codebase.
 
 - Full rules for single money-style games: forced-move handling (maximal dice use, compulsory larger die), hitting, bar entry, bearing off, gammon/backgammon scoring, and a complete doubling cube (offer / take / drop, with undo as fat-finger insurance on a pending double). Match play — match scores, Crawford — is not implemented.
 - The engine (`src/engine/`) is pure functions over immutable state; the UI, the computer player, and the trainer all import the same code. `enumerateTurnOutcomes` dedupes whole turns by resulting position behind a transposition guard, and a seeded property test cross-validates it against the move-by-move generator over random playouts.
@@ -35,7 +35,7 @@ React Native + Expo SDK 57, TypeScript (strict), jotai for state, react-native-s
 - 69 unit tests (vitest) across rules, turn enumeration, the cube, encoding, the TD math, and equity ranking; `tsc --noEmit` is clean.
 - A live analysis panel (`src/components/analysis/`) ranks every legal play of the current turn by net equity — the same evaluation the computer maximizes — as a bar chart beside the board.
 
-[SCREENSHOT: gameplay GIF — a turn against the computer]
+<img width="600" height="600" alt="ScreenRecording_07-23-2026 14-55-34_1" src="https://github.com/user-attachments/assets/f3bb2745-f133-4c7d-ba81-d53e3ee72178" />
 
 ### Run it
 
