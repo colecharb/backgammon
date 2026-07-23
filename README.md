@@ -2,6 +2,8 @@
 
 A complete backgammon game — rules engine, mobile/web app, and a TD-Gammon-style neural net trained by self-play — written from scratch in TypeScript. No game libraries, no ML frameworks.
 
+You can play it at https://backgammon.colecharb.com/.
+
 <img width="600" alt="IMG_8062" src="https://github.com/user-attachments/assets/13071917-bad6-4f1d-9c1a-c27aba289b90" />
 
 
